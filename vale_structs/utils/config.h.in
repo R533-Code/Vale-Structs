@@ -1,0 +1,11 @@
+//Major version of vale structs
+#define VALE_STRUCTS_VERSION_MAJOR ${PROJECT_VERSION_MAJOR}
+//Minor version of vale structs
+#define VALE_STRUCTS_VERSION_MINOR ${PROJECT_VERSION_MINOR}
+//Patch version of vale structs
+#define VALE_STRUCTS_VERSION_PATCH ${PROJECT_VERSION_PATCH}
+//Tweak version of vale structs
+#define VALE_STRUCTS_VERSION_TWEAK ${PROJECT_VERSION_TWEAK}
+
+//The project version as a string
+#define VALE_STRUCTS_VERSION_STRING "${PROJECT_VERSION}"
