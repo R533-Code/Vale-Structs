@@ -17,7 +17,8 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/vale_structs/utils/config.h.in"
 	"${CMAKE_CURRENT_SOURCE_DIR}/vale_structs/utils/config.h")
 
 # We add the 'include' directory to the preprocessor path
-target_include_directories(ValeStructsTest PUBLIC "vale_structs/include" "vale_structs/utils")
+target_include_directories(ValeStructsTest PUBLIC 
+	"vale_structs/include" "vale_structs/utils" "vendor/nanobench/src/include")
 
 # Setup precompiled header
 target_precompile_headers(ValeStructsTest PUBLIC 
