@@ -1,0 +1,3 @@
+[submodule "vendor/nanobench"]
+	path = vendor/nanobench
+	url = https://github.com/martinus/nanobench.git
