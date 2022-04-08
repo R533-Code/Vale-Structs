@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.4)
 # This project is for debugging structs
 project(ValeStructs VERSION 0.0.0.0 LANGUAGES CXX)
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 # Gets all files that ends with a '.cpp'
 file(GLOB_RECURSE vale_structs_units "vale_structs/*.cpp")
 # Gets all files that ends with a '.h'
