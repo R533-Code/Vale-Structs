@@ -1,5 +1,4 @@
-#ifndef VALE_STRUCTS_COMPPCH
-#define VALE_STRUCTS_COMPPCH
+#pragma once
 
 #include <iostream>
 
@@ -7,6 +6,7 @@
 #include <mutex>
 #include <condition_variable>
 
-#include "config.h"
+#include <type_traits>
+#include <utility>
 
-#endif //VALE_STRUCTS_COMPPCH include guard
+#include "config.h"
