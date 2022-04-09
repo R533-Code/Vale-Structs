@@ -112,7 +112,7 @@ namespace vale
 		/// @brief Returns the object at 'index', and throws if the index is out of range.
 		/// @param index The index of the object
 		/// @return const reference to the object
-		constexpr const T& operator[](size_t index)
+		constexpr const T& operator[](size_t index) const
 		{
 			if (index < nb_elem)
 				return ptr[index];
