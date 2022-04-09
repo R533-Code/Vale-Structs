@@ -36,6 +36,17 @@ namespace vale
 			for (size_t i = 0; i < nb_elem; i++)
 				buffer[i] = obj;
 		}
+
+		constexpr void swap(array& other)
+		{
+			std::scoped_lock lock(mutex, other.mutex);
+			for (size_t i = 0; i < nb_elem; i++)
+			{
+				T temp = std::move(other.buffer[i]);
+				other.buffer[i] = std::move(buffer[i]);
+				buffer[i] = std::move(temp);
+			}
+		}
 		
 		/// @brief Returns the object at 'index', and throws if the index is out of range.
 		/// If the index is greater than nb_elem - 1, throws std::out_of_range

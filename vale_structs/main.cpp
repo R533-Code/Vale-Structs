@@ -19,9 +19,16 @@ void testprint(vale::array_view<T> arr)
 
 using namespace vale;
 
+#define PRINT(val) std::cout << #val << ": " << val << '\n'
+
 int main(int argc, char** argv)
 {
-	vale::array<int, 10> arr = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-	std::cout << arr.to_view(0, 10);
-	testprint(arr.to_view());
+	vale::array<int, 10, ThreadSafe> arr1 = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+	vale::array<int, 10, ThreadSafe> arr2 = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+	std::reverse(contiguous_iterator(arr1.data()), contiguous_iterator(arr1.data() + arr1.size()));
+	PRINT(arr1);
+	PRINT(arr2);
+	arr1.swap(arr2);
+	PRINT(arr1);
+	PRINT(arr2);
 }
