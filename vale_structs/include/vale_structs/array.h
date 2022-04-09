@@ -177,7 +177,7 @@ namespace vale
 	class array<T, nb_elem, NonThreadSafe>
 	{
 		// Check that the array has a size > 0
-		static_assert(nb_elem < 0, "Array size should be greater than 0!");
+		static_assert(nb_elem > 0, "Array size should be greater than 0!");
 
 	public:
 		/// @brief Fills the array by assigning 'obj' to each of its item.
