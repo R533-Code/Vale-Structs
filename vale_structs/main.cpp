@@ -22,5 +22,6 @@ using namespace vale;
 int main(int argc, char** argv)
 {
 	vale::array<int, 10> arr = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-	std::cout << arr.to_view(5, 6);
+	std::cout << arr.to_view(0, 10);
+	testprint(arr.to_view());
 }
