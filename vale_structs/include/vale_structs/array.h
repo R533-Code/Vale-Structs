@@ -184,7 +184,7 @@ namespace vale
 	};
 
 	template <class First, class... Rest>
-	array(First, Rest...)->array<typename is_parameter_pack_same_type<First, Rest...>::type, 1 + sizeof...(Rest)>;
+	array(First, Rest...)->array<typename is_parameter_pack_of_same_type<First, Rest...>::type, 1 + sizeof...(Rest)>;
 
 	template<typename T, size_t size, typename ThreadSafety>
 	std::ostream& operator<<(std::ostream& os, const array<T, size, ThreadSafety>& var)
