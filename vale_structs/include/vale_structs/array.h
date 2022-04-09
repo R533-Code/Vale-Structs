@@ -30,14 +30,14 @@ namespace vale
 
 	public:		
 		/// @brief Fills the array by assigning 'obj' to each of its item.
-		constexpr void fill(const T& obj)
+		constexpr void fill(const T& obj) noexcept(std::is_nothrow_copy_assignable_v<T>)
 		{
 			std::scoped_lock lock(mutex);
 			for (size_t i = 0; i < nb_elem; i++)
 				buffer[i] = obj;
 		}
 
-		constexpr void swap(array& other)
+		constexpr void swap(array& other) noexcept(std::is_nothrow_move_assignable_v<T>)
 		{
 			std::scoped_lock lock(mutex, other.mutex);
 			for (size_t i = 0; i < nb_elem; i++)
@@ -111,7 +111,7 @@ namespace vale
 		/// @param index The index of the object
 		/// @param func function to which the object is passed
 		/// @return false if the index is out of range, true if the object was passed to the function
-		constexpr bool access_index(size_t index, void(*func)(const T&)) const
+		constexpr bool access_index(size_t index, void(*func)(const T&)) const noexcept(noexcept(func(std::declval<T>())))
 		{
 			std::scoped_lock lock{ mutex };
 			if (index < nb_elem)
@@ -129,7 +129,7 @@ namespace vale
 		/// @param index The index of the object
 		/// @param func function to which the object is passed
 		/// @return false if the index is out of range, true if the object was passed to the function
-		constexpr bool access_index(size_t index, void(*func)(T&))
+		constexpr bool access_index(size_t index, void(*func)(T&)) noexcept(noexcept(func(std::declval<T>())))
 		{
 			std::scoped_lock lock{ mutex };
 			if (index < nb_elem)
@@ -142,7 +142,7 @@ namespace vale
 
 		/// @brief Call a functor with each of the object in the array
 		/// @param func The functor to which a reference of each object is passed
-		constexpr void for_each(void(*func)(T&))
+		constexpr void for_each(void(*func)(T&)) noexcept(noexcept(func(std::declval<T>())))
 		{
 			std::scoped_lock lock{ mutex };
 			for (size_t i = 0; i < nb_elem; i++)
@@ -151,7 +151,7 @@ namespace vale
 
 		/// @brief Call a functor with each of the object in the array
 		/// @param func The functor to which a const reference of each object is passed
-		constexpr void for_each(void(*func)(const T&)) const
+		constexpr void for_each(void(*func)(const T&)) const noexcept(noexcept(func(std::declval<T>())))
 		{
 			std::scoped_lock lock{ mutex };
 			for (size_t i = 0; i < nb_elem; i++)
@@ -162,17 +162,17 @@ namespace vale
 		/// The size of the array is the template parameter 'nb_elem'.
 		/// Does not lock the mutex protecting the data.
 		/// @return The size of the array
-		constexpr size_t size() const { return nb_elem; }
+		constexpr size_t size() const noexcept { return nb_elem; }
 
 		/// @brief Returns a pointer to the beginning of the data
 		/// Does not lock the mutex protecting the data.
 		/// @return const pointer to the beginning of the data
-		constexpr const T* data() const { return buffer; }
+		constexpr const T* data() const noexcept { return buffer; }
 
 		/// @brief Returns a pointer to the beginning of the data.
 		/// Does not lock the mutex protecting the data.
 		/// @return pointer to the beginning of the data
-		constexpr T* data() { return buffer; }
+		constexpr T* data() noexcept { return buffer; }
 
 	public: //MEMBERS
 
@@ -192,7 +192,7 @@ namespace vale
 
 	public:
 		/// @brief Fills the array by assigning 'obj' to each of its item.
-		constexpr void fill(const T& obj)
+		constexpr void fill(const T& obj) noexcept(std::is_nothrow_copy_assignable_v<T>)
 		{
 			for (size_t i = 0; i < nb_elem; i++)
 				buffer[i] = obj;
@@ -222,11 +222,11 @@ namespace vale
 
 		/// @brief Returns the last object in the array
 		/// @return const reference to the last object
-		constexpr const T& back() const { return buffer[nb_elem - 1]; }
+		constexpr const T& back() const noexcept { return buffer[nb_elem - 1]; }
 
 		/// @brief Returns the last object in the array
 		/// @return reference to the last object
-		constexpr T& back() { return buffer[nb_elem - 1]; }
+		constexpr T& back()		  noexcept { return buffer[nb_elem - 1]; }
 
 		/// @brief Returns the first object in the array
 		/// @return const reference to the first object
