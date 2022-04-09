@@ -51,10 +51,64 @@ namespace vale
 	}
 
 	template<typename T>
-	struct contiguous_struct_view
+	/// @brief An iterator for object that are contiguous in memory
+	/// @tparam T The type of to which the iterator points
+	struct contiguous_iterator
 	{
-		T* ptr;
-		size_t size;
+		//HELPER TAGS
+		using iterator_category = std::random_access_iterator_tag;
+		using difference_type = std::ptrdiff_t;
+		using value_type = T;
+		using pointer = T*;
+		using reference = T&;
+
+		//CONSTRUCTOR
+		constexpr contiguous_iterator(pointer ptr)
+			: ptr(ptr) {}
+		
+		//OPERATOR
+		constexpr value_type& operator*() const { return *ptr; }
+		constexpr value_type& operator->() const { return *ptr; }
+		constexpr contiguous_iterator& operator++() { ptr++; return *this; }
+		constexpr contiguous_iterator operator++(int) { contiguous_iterator tmp = *this; ++(*this); return tmp; }
+		constexpr contiguous_iterator& operator--() { ptr--; return *this; }
+		constexpr contiguous_iterator operator--(int) { contiguous_iterator tmp = *this; --(*this); return tmp; }
+		constexpr contiguous_iterator operator+(difference_type val) { return ptr + val; }
+		constexpr contiguous_iterator operator-(difference_type val) { return ptr - val; }
+		constexpr contiguous_iterator& operator+=(difference_type val) { ptr += val; }
+		constexpr contiguous_iterator& operator-=(difference_type val) { ptr -= val; }
+		//COMPARISONS
+		friend constexpr bool operator== (const contiguous_iterator& a, const contiguous_iterator& b) { return a.ptr == b.ptr; };
+		friend constexpr bool operator!= (const contiguous_iterator& a, const contiguous_iterator& b) { return a.ptr != b.ptr; };
+		friend constexpr bool operator<	(const contiguous_iterator& a, const contiguous_iterator& b) { return a.ptr < b.ptr; } 
+		friend constexpr bool operator>	(const contiguous_iterator& a, const contiguous_iterator& b) { return a.ptr > b.ptr; } 
+		friend constexpr bool operator<=(const contiguous_iterator& a, const contiguous_iterator& b) { return a.ptr <= b.ptr; } 
+		friend constexpr bool operator>=(const contiguous_iterator& a, const contiguous_iterator& b) { return a.ptr >= b.ptr; } 
+	
+	private:
+		pointer ptr;
+	};
+
+	template<typename T>
+	/// @brief A non-owning view of contiguous structs.
+	/// Cheap object that should not be passed by reference.
+	/// Should be preferred over passing structs by const-reference.
+	/// @tparam T The type pointed to
+	class contiguous_struct_view
+	{
+		/// @brief Pointer to the data
+		const T* ptr;
+		/// @brief The number of item pointed to
+		size_t nb_elem;
+
+	public:
+		/// @brief Size of the view, or the number of objects it points to
+		/// @return size_t representing the size of the view
+		constexpr size_t size() const noexcept { return nb_elem; }
+
+		/// @brief Returns a pointer to the beginning of the view
+		/// @return const pointer to the data
+		constexpr const T* data() const noexcept { return ptr; }
 
 		constexpr const T& operator[](size_t index)
 		{
