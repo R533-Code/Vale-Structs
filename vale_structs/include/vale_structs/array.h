@@ -3,29 +3,44 @@
 
 namespace vale
 {
-	//Unspecialized array, which defaults to a non-thread safe array
+	/// @brief Unspecialized array which defaults to a NonThreadSafe.
+	/// Reports an error if ThreadSafety is not a thread safety policy: [Non]ThreadSafe.
+	/// @tparam T The type of the array
+	/// @tparam nb_elem The size of the array
+	/// @tparam ThreadSafety The thread safety policy of the array
 	template<typename T, size_t nb_elem, typename ThreadSafety = NonThreadSafe>
-	class array { static_assert(is_thread_safety_policy_v<ThreadSafety>, "ThreadSafety can only be ThreadSafe/NonThreadSafe"); };
+	class array { static_assert(details::is_thread_safety_policy_v<ThreadSafety>, "ThreadSafety can only be ThreadSafe/NonThreadSafe"); };
+
+	template<typename T>
+	/// @brief Alias over a contiguous_struct_view for more easy typing
+	/// @tparam T The type of the view
+	using array_view = contiguous_struct_view<T>;
 
 	template<typename T, size_t nb_elem>
-	//A Thread Safe fixed-size array
+	/// @brief A thread safe array which provides helpful methods when working concurrently.
+	/// Thread safe array which provides facilities to access its content concurrently.
+	/// Does not possess iterators or .to_view() facilities to avoid false usages.
+	/// The mutex is public to permit CTAD. It is recommended NEVER to lock it,
+	/// as all methods but '.data()' and '.size()' locks it.
+	/// @tparam T The type of the objects to store.
 	class array<T, nb_elem, ThreadSafe>
 	{
-		static_assert(nb_elem != 0, "Array size should be greater than 0!");
+		// Check that the array has a size > 0
+		static_assert(nb_elem > 0, "Array size should be greater than 0!");
 
-	public:
-		template<typename... Args>
-		//Clears the object stored and replaces them by calling the constructor
-		//and forwarding the arguments to it.
-		constexpr void fill(Args&&... args)
+	public:		
+		/// @brief Fills the array by assigning 'obj' to each of its item.
+		constexpr void fill(const T& obj)
 		{
 			std::scoped_lock lock(mutex);
 			for (size_t i = 0; i < nb_elem; i++)
-				buffer[i] = obj;			
+				buffer[i] = obj;
 		}
-
-		//Returns the object at 'index'. 
-		//If the index is greater than nb_elem - 1, throws std::out_of_range
+		
+		/// @brief Returns the object at 'index', and throws if the index is out of range.
+		/// If the index is greater than nb_elem - 1, throws std::out_of_range
+		/// @param index The index of the object
+		/// @return reference to the object
 		constexpr T& operator[](size_t index)
 		{
 			std::scoped_lock lock(mutex);
@@ -34,8 +49,10 @@ namespace vale
 			throw std::out_of_range("vale::array: index was greater than size!");
 		}
 
-		//Returns the object at 'index'. 
-		//If the index is greater than nb_elem - 1, throws std::out_of_range
+		/// @brief Returns the object at 'index', and throws if the index is out of range.
+		/// If the index is greater than nb_elem - 1, throws std::out_of_range
+		/// @param index The index of the object
+		/// @return const reference to the object
 		constexpr const T& operator[](size_t index) const
 		{
 			std::scoped_lock lock(mutex);
@@ -44,39 +61,48 @@ namespace vale
 			throw std::out_of_range("vale::array: index was greater than size!");
 		}
 
-		//Returns the last object in the array
+		/// @brief Returns the last object in the array
+		/// @return const reference to the last object
 		constexpr const T& back() const
 		{
-			std::scoped_lock lock(mutex);			
+			std::scoped_lock lock(mutex);
 			return buffer[nb_elem - 1];
 		}
 
-		//Returns the last object
+		/// @brief Returns the last object in the array
+		/// @return reference to the last object
 		constexpr T& back()
 		{
 			std::scoped_lock lock(mutex);
 			return buffer[nb_elem - 1];
 		}
 
-		//Returns the first object in the array
+		/// @brief Returns the first object in the array
+		/// @return const reference to the first object
 		constexpr const T& front() const
 		{
 			std::scoped_lock lock(mutex);
 			return buffer[0];
 		}
 
-		//Returns the first object
+		/// @brief Returns the first object in the array
+		/// @return reference to the first object
 		constexpr T& front()
 		{
 			std::scoped_lock lock{ mutex };
 			return buffer[0];
 		}
 
-		//Access the object at 'index' and passes it to a functor that accepts
-		//a 'const T&'. Returns true if the object is passed to the function.
+		/// @brief Access the object at 'index' through a functor.
+		/// Accesses the object at 'index' and passes it to a functor that accepts
+		/// a 'const T&'. 
+		/// Returns true if the object is passed to the function, which means the index was in the range of the array.
+		/// @param index The index of the object
+		/// @param func function to which the object is passed
+		/// @return false if the index is out of range, true if the object was passed to the function
 		constexpr bool access_index(size_t index, void(*func)(const T&)) const
 		{
-			std::scoped_lock lock{mutex};
+			std::scoped_lock lock{ mutex };
 			if (index < nb_elem)
 			{
 				func(buffer[index]);
@@ -85,8 +111,13 @@ namespace vale
 			return false;
 		}
 
-		//Access the object at 'index' and passes it to a functor that accepts
-		//a 'const T&'. Returns true if the object is passed to the function.
+		/// @brief Access the object at 'index' through a functor.
+		/// Accesses the object at 'index' and passes it to a functor that accepts
+		/// a 'T&'. 
+		/// Returns true if the object is passed to the function, which means the index was in the range of the array.
+		/// @param index The index of the object
+		/// @param func function to which the object is passed
+		/// @return false if the index is out of range, true if the object was passed to the function
 		constexpr bool access_index(size_t index, void(*func)(T&))
 		{
 			std::scoped_lock lock{ mutex };
@@ -98,6 +129,8 @@ namespace vale
 			return false;
 		}
 
+		/// @brief Call a functor with each of the object in the array
+		/// @param func The functor to which a reference of each object is passed
 		constexpr void for_each(void(*func)(T&))
 		{
 			std::scoped_lock lock{ mutex };
@@ -105,6 +138,8 @@ namespace vale
 				func(buffer[i]);
 		}
 
+		/// @brief Call a functor with each of the object in the array
+		/// @param func The functor to which a const reference of each object is passed
 		constexpr void for_each(void(*func)(const T&)) const
 		{
 			std::scoped_lock lock{ mutex };
@@ -112,36 +147,50 @@ namespace vale
 				func(buffer[i]);
 		}
 
+		/// @brief Returns the size of the array.
+		/// The size of the array is the template parameter 'nb_elem'.
+		/// Does not lock the mutex protecting the data.
+		/// @return The size of the array
 		constexpr size_t size() const { return nb_elem; }
 
-		//Returns a pointer to the beginning of the data. NON-THREAD SAFE
+		/// @brief Returns a pointer to the beginning of the data
+		/// Does not lock the mutex protecting the data.
+		/// @return const pointer to the beginning of the data
 		constexpr const T* data() const { return buffer; }
-		
-		//Returns a pointer to the beginning of the data. NON-THREAD SAFE
+
+		/// @brief Returns a pointer to the beginning of the data.
+		/// Does not lock the mutex protecting the data.
+		/// @return pointer to the beginning of the data
 		constexpr T* data() { return buffer; }
 
 	public: //MEMBERS
 
+		/// @brief C-style array of objects
 		T buffer[nb_elem];
-		
+		/// @brief The mutex which protects the data
 		mutable std::mutex mutex{};
 	};
 
 	template<typename T, size_t nb_elem>
-	//Non Thread Safe fixed-size array
+	/// @brief A non-thread safe array of objects
+	/// @tparam T The type of the array
 	class array<T, nb_elem, NonThreadSafe>
 	{
-		static_assert(nb_elem != 0, "Array size should be greater than 0!");
+		// Check that the array has a size > 0
+		static_assert(nb_elem < 0, "Array size should be greater than 0!");
 
-	public:		
+	public:
+		/// @brief Fills the array by assigning 'obj' to each of its item.
 		constexpr void fill(const T& obj)
 		{
 			for (size_t i = 0; i < nb_elem; i++)
 				buffer[i] = obj;
 		}
 
-		//Returns the object at 'index'. 
-		//If the index is greater than nb_elem - 1, throws std::out_of_range
+		/// @brief Returns the object at 'index', and throws if the index is out of range.
+		/// If the index is greater than nb_elem - 1, throws std::out_of_range
+		/// @param index The index of the object
+		/// @return reference to the object
 		constexpr T& operator[](size_t index)
 		{
 			if (index < nb_elem)
@@ -149,8 +198,10 @@ namespace vale
 			throw std::out_of_range("vale::array: index was greater than size!");
 		}
 
-		//Returns the object at 'index'. 
-		//If the index is greater than nb_elem - 1, throws std::out_of_range
+		/// @brief Returns the object at 'index', and throws if the index is out of range.
+		/// If the index is greater than nb_elem - 1, throws std::out_of_range
+		/// @param index The index of the object
+		/// @return const reference to the object
 		constexpr const T& operator[](size_t index) const
 		{
 			if (index < nb_elem)
@@ -158,35 +209,88 @@ namespace vale
 			throw std::out_of_range("vale::array: index was greater than size!");
 		}
 
-		//Returns the last object in the array
+		/// @brief Returns the last object in the array
+		/// @return const reference to the last object
 		constexpr const T& back() const { return buffer[nb_elem - 1]; }
 
-		//Returns the last object
+		/// @brief Returns the last object in the array
+		/// @return reference to the last object
 		constexpr T& back() { return buffer[nb_elem - 1]; }
 
-		//Returns the first object in the array
-		constexpr const T& front() const { return buffer[0]; }
+		/// @brief Returns the first object in the array
+		/// @return const reference to the first object
+		constexpr const T& front() const noexcept { return buffer[0]; }
 
-		//Returns the first object
-		constexpr T& front() { return buffer[0]; }
+		/// @brief Returns the first object in the array
+		/// @return reference to the first object
+		constexpr T& front()			 noexcept { return buffer[0]; }
 
-		constexpr size_t size() const { return nb_elem; }
+		/// @brief Returns the size of the array.
+		/// The size of the array is the template parameter 'nb_elem'.
+		/// @return The size of the array
+		constexpr size_t size()	const noexcept { return nb_elem; }
 
-		//Returns a pointer to the beginning of the data. NON-THREAD SAFE
-		constexpr const T* data() const { return buffer; }
+		/// @brief Returns a pointer to the beginning of the data
+		/// @return const pointer to the beginning of the data
+		constexpr const T* data() const noexcept { return buffer; }
 
-		//Returns a pointer to the beginning of the data. NON-THREAD SAFE
-		constexpr T* data() { return buffer; }
+		/// @brief Returns a pointer to the beginning of the data
+		/// @return pointer to the beginning of the data
+		constexpr T* data()				noexcept { return buffer; }
+
+		/// @brief Returns an iterator to the beginning of the array
+		/// @return iterator to the beginning of the array
+		constexpr contiguous_iterator<T> begin()	noexcept { return contiguous_iterator<T>(buffer); }
+		/// @brief Returns an iterator to the end of the array
+		/// @return iterator to the end of the array
+		constexpr contiguous_iterator<T> end()		noexcept { return contiguous_iterator<T>(buffer + nb_elem); }
+
+		/// @brief Returns an const iterator to the beginning of the array
+		/// @return const iterator to the beginning of the array
+		constexpr contiguous_iterator<const T> cbegin()		const noexcept { return buffer + nb_elem; }
+		/// @brief Returns an const iterator to the end of the array
+		/// @return const iterator to the end of the array
+		constexpr contiguous_iterator<const T> cend()		const noexcept { return buffer + nb_elem; }		
+
+		/// @brief Returns a view of all the items in the struct
+		/// @return view of all the items in the struct
+		constexpr array_view<T> to_view() noexcept { return array_view<T>(buffer, nb_elem); }
+		
+		/// @brief Returns a view of all the items in the struct starting from offset.
+		/// Throws if offset >= nb_elem.
+		/// @return view of all the items in the struct beginning from offset, or throws.
+		array_view<T> to_view(size_t offset)
+		{ 
+			if (offset < nb_elem)
+				return array_view<T>(buffer + offset, nb_elem - offset);
+			throw std::out_of_range("vale::array: offset was greater than size!");
+		}
+		
+		/// @brief Returns a view of 'size' items in the struct starting from offset.
+		/// Throws if offset >= nb_elem.
+		/// @return view of 'size' items in the struct beginning from offset, or throws.
+		array_view<T> to_view(size_t offset, size_t size)
+		{
+			if (offset + size - 1 < nb_elem)
+			{
+				return array_view<T>(buffer + offset, size);
+			}
+			throw std::out_of_range("vale::array: offset + size was greater than size!");
+		}
 
 	public: //MEMBERS
 
+		/// @brief C-style array of objects
 		T buffer[nb_elem];
 	};
 
+	//CTAD for vale::array: this works because of aggregate initialization
 	template <class First, class... Rest>
-	array(First, Rest...)->array<typename is_parameter_pack_of_same_type<First, Rest...>::type, 1 + sizeof...(Rest)>;
+	array(First, Rest...)->array<typename details::is_parameter_pack_of_same_type<First, Rest...>::type, 1 + sizeof...(Rest)>;
 
 	template<typename T, size_t size, typename ThreadSafety>
+	/// @brief writes the content of the array between '{}', separating the objects by ','.
+	/// Will lock the mutex of the array if its thread safety policy is ThreadSafe.
 	std::ostream& operator<<(std::ostream& os, const array<T, size, ThreadSafety>& var)
 	{
 		if constexpr (std::is_same_v<ThreadSafety, ThreadSafe>)
