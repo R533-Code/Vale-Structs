@@ -161,6 +161,79 @@ namespace vale
 		/// @brief Returns an const iterator to the end of the array
 		/// @return const iterator to the end of the array
 		constexpr contiguous_iterator<const T> cend()	const noexcept { return ptr + nb_elem; }
+
+		/// @brief Check if the view starts with an object == 'with'
+		/// @param with The object to compare with
+		/// @return false if the view is empty or the first object != with.
+		constexpr bool starts_with(const T& with) const
+		{
+			if (is_empty())
+				return false;
+			return with == ptr[0];
+		}
+
+		/// @brief Check if the view ends with an object == 'with'
+		/// @param with The object to compare with
+		/// @return false if the view is empty or the last object != with.
+		constexpr bool ends_with(const T& with) const
+		{
+			if (is_empty())
+				return false;
+			return with == ptr[nb_elem - 1];
+		}
+
+		/// @brief Check if the view ends with an object == 'with'
+		/// @param with The object to compare with
+		/// @return false if the view is empty or the last object != with.
+		constexpr bool contains(const T& with) const
+		{
+			for (size_t i = 0; i < nb_elem; i++)
+			{
+				if (with == ptr[i])
+					return true;
+			}
+			return false;
+		}
+
+		/// @brief Check if 2 views contains the same objects.
+		/// This does not check if the pointer and size are the same, but rather if
+		/// all the objects pointed by the views are the same.
+		/// @param a The view to compare with 'b'
+		/// @param b The view to compare with 'a'
+		/// @return Returns true if both views have the same size and contains the same objects
+		friend constexpr bool operator==(const contiguous_struct_view<T>& a, const contiguous_struct_view<T>& b)
+		{
+			if (a.size() == b.size())
+			{
+				for (size_t i = 0; i < a.size(); i++)
+				{
+					if (a[i] != b[i])
+						return false;
+				}
+				return true;
+			}
+			return false;
+		}
+
+		/// @brief Check if 2 views doesn't contain the same objects.
+		/// This does not check if the pointer and size are the different, but rather if
+		/// at least one of the objects pointed by the views is different.
+		/// @param a The view to compare with 'b'
+		/// @param b The view to compare with 'a'
+		/// @return Returns false if both views have the same size and contains the same objects
+		friend constexpr bool operator!=(const contiguous_struct_view<T>& a, const contiguous_struct_view<T>& b)
+		{
+			if (a.size() == b.size())
+			{
+				for (size_t i = 0; i < a.size(); i++)
+				{
+					if (a[i] != b[i])
+						return true;
+				}
+				return false;
+			}
+			return true;
+		}
 	};
 
 	template<typename T>
