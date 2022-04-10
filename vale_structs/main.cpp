@@ -24,11 +24,15 @@ using namespace vale;
 int main(int argc, char** argv)
 {
 	vale::array<int, 10, ThreadSafe> arr1 = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-	vale::array<int, 10, ThreadSafe> arr2 = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-	std::reverse(contiguous_iterator(arr1.data()), contiguous_iterator(arr1.data() + arr1.size()));
 	PRINT(arr1);
-	PRINT(arr2);
-	arr1.swap(arr2);
+	std::random_device rd;
+	std::mt19937 g(rd());
+	arr1.pass_iterators(std::shuffle<array_iterator<int>, std::mt19937&>, g);
+	std::shuffle(array_iterator<int>(arr1.buffer), array_iterator<int>(arr1.buffer + arr1.size()), g);
 	PRINT(arr1);
-	PRINT(arr2);
+	arr1.pass_iterators(
+		std::sort<array_iterator<int>, bool(const int&, const int&)>,
+		[](const int& a, const int& b) {return a < b; }
+	);
+	PRINT(arr1);
 }
