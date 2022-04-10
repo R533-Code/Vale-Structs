@@ -47,6 +47,12 @@ namespace vale
 			static_assert(std::conjunction_v<std::is_same<First, Rest>...>);
 			using type = First;
 		};
+
+		template<typename Callable>
+		/// @brief Helper to get the return type of a callable
+		/// @tparam Callable The functor
+		using return_type_of_callable_t = //Takes advantages of std::function's CTAD
+			typename decltype(std::function{ std::declval<Callable>() })::result_type;
 	}
 
 	template<typename T>
