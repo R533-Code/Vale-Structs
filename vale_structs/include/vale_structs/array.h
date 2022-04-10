@@ -16,6 +16,11 @@ namespace vale
 	/// @tparam T The type of the view
 	using array_view = contiguous_struct_view<T>;
 
+	template<typename T>
+	/// @brief Alias over a contiguous_iterator for more easy typing
+	/// @tparam T The type of the view
+	using array_iterator = contiguous_iterator<T>;
+
 	template<typename T, size_t nb_elem>
 	/// @brief A thread safe array which provides helpful methods when working concurrently.
 	/// Thread safe array which provides facilities to access its content concurrently.
