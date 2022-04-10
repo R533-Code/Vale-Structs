@@ -74,6 +74,7 @@ namespace vale
 		constexpr contiguous_iterator operator--(int) { contiguous_iterator tmp = *this; --(*this); return tmp; }
 		constexpr contiguous_iterator operator+(difference_type val) { return ptr + val; }
 		constexpr contiguous_iterator operator-(difference_type val) { return ptr - val; }
+		constexpr difference_type operator-(const contiguous_iterator val) const { return ptr - val.ptr; }
 		constexpr contiguous_iterator& operator+=(difference_type val) { ptr += val; }
 		constexpr contiguous_iterator& operator-=(difference_type val) { ptr -= val; }
 		//COMPARISONS
