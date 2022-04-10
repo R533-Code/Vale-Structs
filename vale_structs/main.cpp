@@ -6,16 +6,7 @@
 #include <chrono>
 
 #include <vale_structs/array.h>
-#include <array>
-
-template<typename T>
-void testprint(vale::array_view<T> arr)
-{
-	for (auto& i : arr)
-	{
-		std::cout << i << '|';
-	}
-}
+#include <vale_structs/variant.h>
 
 using namespace vale;
 
