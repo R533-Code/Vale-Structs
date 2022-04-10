@@ -126,21 +126,59 @@ namespace vale
 			//We do not implement a ::type field, which will cause a compilation error.
 		};
 
-		template<size_t index, typename... Pack>
+		template<size_t index, typename First, typename... Rest>
 		/// @brief Returns the type at index 'index' of a pack
-		/// @tparam ...Pack The pack from which to extract the type
+		/// @tparam First The first type
+		/// @tparam ...Rest The pack from which to extract the type
 		struct get_type_at_index_from_pack
 		{
-			static_assert(index < sizeof...(Pack) - 1, "Index was greater than sizeof...(Pack)!");
+			static_assert(index < sizeof...(Rest), "Index was greater than sizeof...(Pack)!");
 			using type = 
-				typename recurse_index_pack<index, Pack...>::type;
+				typename recurse_index_pack<index, First, Rest...>::type;
 		};
 
-		template<size_t index, typename... Pack>
+		template<size_t index, typename First, typename... Rest>
 		/// @brief Returns the type at index 'index' of a pack
-		/// @tparam ...Pack The pack from which to extract the type
+		/// @tparam First The first type
+		/// @tparam ...Rest The pack from which to extract the type
 		using get_type_at_index_from_pack_t = 
-			typename get_type_at_index_from_pack<index, Pack...>::type;
+			typename get_type_at_index_from_pack<index, First, Rest...>::type;		
+
+
+		template<bool condition, bool... conditions>
+		/// @brief Unspecialized helper
+		struct recurse_type_pack
+		{};
+
+		template<bool... conditions>
+		/// @brief Helper for getting the index of a type in a parameter type
+		struct recurse_type_pack<false, conditions...>
+		{
+			static constexpr uint64_t value = 1 + recurse_type_pack<conditions...>::value;
+		};
+
+		template<>
+		/// @brief Helper for getting the index of a type in a parameter type
+		struct recurse_type_pack<false>
+		{
+			//No field to signify that the type was not found
+		};
+
+		template<bool... conditions>
+		/// @brief Helper for getting the index of a type in a parameter type
+		struct recurse_type_pack<true, conditions...>
+		{
+			static constexpr uint64_t value = 0;
+		};
+
+		template<typename Type, typename First, typename... Rest>
+		struct get_index_of_type_from_pack
+		{
+			static constexpr uint64_t value = recurse_type_pack<std::is_same_v<Type, First>, std::is_same_v<Type, Rest>...>::value;
+		};
+
+		template<typename Type, typename First, typename... Rest>
+		static constexpr uint64_t get_index_of_type_from_pack_v = get_index_of_type_from_pack<Type, First, Rest...>::value;
 	}
 
 	template<typename T>
