@@ -256,17 +256,17 @@ namespace vale
 
 		/// @brief Returns an iterator to the beginning of the array
 		/// @return iterator to the beginning of the array
-		constexpr contiguous_iterator<T> begin()	noexcept { return contiguous_iterator<T>(buffer); }
+		constexpr array_iterator<T> begin()		noexcept { return array_iterator<T>(buffer); }
 		/// @brief Returns an iterator to the end of the array
 		/// @return iterator to the end of the array
-		constexpr contiguous_iterator<T> end()		noexcept { return contiguous_iterator<T>(buffer + nb_elem); }
+		constexpr array_iterator<T> end()		noexcept { return array_iterator<T>(buffer + nb_elem); }
 
 		/// @brief Returns an const iterator to the beginning of the array
 		/// @return const iterator to the beginning of the array
-		constexpr contiguous_iterator<const T> cbegin()		const noexcept { return buffer + nb_elem; }
+		constexpr array_iterator<const T> cbegin()		const noexcept { return buffer + nb_elem; }
 		/// @brief Returns an const iterator to the end of the array
 		/// @return const iterator to the end of the array
-		constexpr contiguous_iterator<const T> cend()		const noexcept { return buffer + nb_elem; }		
+		constexpr array_iterator<const T> cend()		const noexcept { return buffer + nb_elem; }
 
 		/// @brief Returns a view of all the items in the struct
 		/// @return view of all the items in the struct
