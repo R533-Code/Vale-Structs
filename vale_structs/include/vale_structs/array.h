@@ -161,6 +161,49 @@ namespace vale
 			std::scoped_lock lock{ mutex };
 			for (size_t i = 0; i < nb_elem; i++)
 				func(buffer[i]);
+		}		
+
+		template<typename Func, typename... Args>
+		/// @brief Passes begin and end iterators followed by an argument pack to a function, and returns the result of the function.
+		/// This method can be used to thread-safely access iterators of the array.
+		/// This method is not responsible of the thread-safety of the result of the function:
+		/// to access the result of the function thread-safely, use pass_iterators_and(...) instead.
+		/// \code{.cpp}		
+		/// vale::array<int, 10, ThreadSafe> arr1 = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+		/// arr1.pass_iterators(std::sort<array_iterator<int>>); //Sorts the array thread-safely
+		/// \endcode
+		/// @tparam Func 
+		/// @tparam ...Args 
+		/// @param function 
+		/// @param ...args 
+		/// @return 
+		constexpr auto pass_iterators(Func function, Args&&... args) -> details::return_type_of_callable_t<Func>
+		{
+			std::scoped_lock lock{ mutex };
+			return function(contiguous_iterator(buffer), contiguous_iterator(buffer + nb_elem), std::forward<Args>(args)...);
+		}
+
+		template<typename Func, typename... Args>
+		/// @brief Passes begin and end iterators, followed by an argument pack to a function, and passes the result of that function to 'and_result'.
+		/// This method can be used to thread-safely access the result of a function to which we passed
+		/// iterators of the array, and some other parameters in the form of a pack.
+		/// \code{.cpp}
+		/// vale::array<int, 10, ThreadSafe> arr1 = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+		/// arr1.pass_iterators_and(
+		///		[](array_iterator<int> i) { /*DO SOMETHING USEFUL WITH THE RESULT*/; }, //Access the result of max_element
+		///		std::max_element<array_iterator<int>, bool(const int&, const int&)>,
+		///		[](const int& a, const int& b) {return a < b; } //Passed to max_element
+		/// );
+		/// \endcode
+		/// @tparam Func The functor to which iterators and an argument pack are passed
+		/// @tparam ...Args The parameter pack
+		/// @param and_result The functor to which the result of 'function' is passed
+		/// @param function The functor to which begin/end iterators and the parameter pack are passed
+		/// @param ...args The argument pack which is forwarded to 'function' after passing begin/end iterators
+		constexpr void pass_iterators_and(void(*and_result)(details::return_type_of_callable_t<Func>), Func function, Args&&... args)
+		{
+			std::scoped_lock lock{ mutex };
+			and_result(function(contiguous_iterator(buffer), contiguous_iterator(buffer + nb_elem), std::forward<Args>(args)...));
 		}
 
 		/// @brief Returns the size of the array.
