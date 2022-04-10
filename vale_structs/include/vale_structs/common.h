@@ -19,85 +19,7 @@ namespace vale
 
 	/// @brief Contains meta-programing utilities
 	namespace details
-	{
-		template<typename T>
-		/// @brief Helper struct to check if a type is [Non]ThreadSafe
-		/// @tparam T The type to check for
-		struct is_thread_safety_policy { static constexpr bool value = false; };
-
-		template<>
-		/// @brief Overload for ThreadSafe thread safety policy
-		struct is_thread_safety_policy<ThreadSafe> { static constexpr bool value = true; };
-
-		template<>
-		/// @brief Overload for NonThreadSafe thread safety policy
-		struct is_thread_safety_policy<NonThreadSafe> { static constexpr bool value = true; };
-
-		template<typename T>
-		/// @brief helper type to help determine if a type is [Non]ThreadSafe
-		/// @tparam T The type to check for
-		static constexpr bool is_thread_safety_policy_v = is_thread_safety_policy<T>::value;
-		
-		template <typename First, typename... Rest>
-		/// @brief Checks if a parameter pack is formed by the same type
-		/// @tparam First The first type
-		/// @tparam ...Rest The rest of the parameter pack
-		struct is_parameter_pack_of_same_type
-		{
-			static_assert(std::conjunction_v<std::is_same<First, Rest>...>);
-			using type = First;
-		};
-
-		template<typename Callable>
-		/// @brief Helper to get the return type of a callable
-		/// @tparam Callable The functor
-		using return_type_of_callable_t = //Takes advantages of std::function's CTAD
-			typename decltype(std::function{ std::declval<Callable>() })::result_type;
-
-		template<typename First, typename... Rest>
-		/// @brief Helper type to access the maximum sizeof all types passed as template arguments
-		/// @tparam First The first type
-		/// @tparam ...Rest Parameter pack
-		struct get_max_size_of_type_pack
-		{
-			static constexpr uint64_t size = std::max({ sizeof(First), sizeof(Rest)...});
-		};
-
-		template<>
-		/// @brief Helper type overload for errors, as void doesn't have a size
-		struct get_max_size_of_type_pack<void>
-		{
-			//No 'size' field so this results in a compilation error
-		};
-
-		template<typename First, typename... Rest>
-		/// @brief Helper to get the maximum sizeof all types passed as template arguments
-		/// @tparam First The first type
-		/// @tparam ...Rest Parameter pack
-		static constexpr uint64_t get_max_size_of_type_pack_v = get_max_size_of_type_pack<First, Rest...>::size;
-
-		template<typename First, typename... Rest>
-		/// @brief Helper to get the minimum sizeof all types passed as template arguments
-		/// @tparam First The first type
-		/// @tparam ...Rest Parameter pack
-		struct get_min_size_of_type_pack
-		{
-			static constexpr uint64_t size = std::min({ sizeof(First), sizeof(Rest)...});
-		};
-
-		template<>
-		/// @brief Helper type overload for errors, as void doesn't have a size
-		struct get_min_size_of_type_pack<void>
-		{
-			//No 'size' field to cause compilation error.
-		};
-
-		template<typename First, typename... Rest>
-		/// @brief Helper to get the minimum sizeof all types passed as template arguments
-		/// @tparam First The first type
-		/// @tparam ...Rest Parameter pack
-		static constexpr uint64_t get_min_size_of_type_pack_v = get_min_size_of_type_pack<First, Rest...>::size;
-
+	{	
 		template<size_t index, typename First, typename... Pack>
 		/// @brief Helper type that stores the type at index 'index' of the type passed as template arguments.
 		/// @tparam First The first type
@@ -126,25 +48,6 @@ namespace vale
 			//We do not implement a ::type field, which will cause a compilation error.
 		};
 
-		template<size_t index, typename First, typename... Rest>
-		/// @brief Returns the type at index 'index' of a pack
-		/// @tparam First The first type
-		/// @tparam ...Rest The pack from which to extract the type
-		struct get_type_at_index_from_pack
-		{
-			static_assert(index < sizeof...(Rest), "Index was greater than sizeof...(Pack)!");
-			using type = 
-				typename recurse_index_pack<index, First, Rest...>::type;
-		};
-
-		template<size_t index, typename First, typename... Rest>
-		/// @brief Returns the type at index 'index' of a pack
-		/// @tparam First The first type
-		/// @tparam ...Rest The pack from which to extract the type
-		using get_type_at_index_from_pack_t = 
-			typename get_type_at_index_from_pack<index, First, Rest...>::type;		
-
-
 		template<bool condition, bool... conditions>
 		/// @brief Unspecialized helper
 		struct recurse_type_pack
@@ -171,14 +74,155 @@ namespace vale
 			static constexpr uint64_t value = 0;
 		};
 
+	}
+
+	namespace helpers
+	{
+		template<typename First, typename... Rest>
+		/// @brief Helper type to access the maximum sizeof all types passed as template arguments
+		/// @tparam First The first type
+		/// @tparam ...Rest Parameter pack
+		struct get_max_size_of_type_pack
+		{
+			static constexpr uint64_t size = std::max({ sizeof(First), sizeof(Rest)... });
+		};
+
+		template<>
+		/// @brief Helper type overload for errors, as void doesn't have a size
+		struct get_max_size_of_type_pack<void>
+		{
+			//No 'size' field so this results in a compilation error
+		};
+
+		template<typename First, typename... Rest>
+		/// @brief Helper to get the maximum sizeof all types passed as template arguments
+		/// @tparam First The first type
+		/// @tparam ...Rest Parameter pack
+		static constexpr uint64_t get_max_size_of_type_pack_v = get_max_size_of_type_pack<First, Rest...>::size;
+
+		template<typename First, typename... Rest>
+		/// @brief Helper to get the minimum sizeof all types passed as template arguments
+		/// @tparam First The first type
+		/// @tparam ...Rest Parameter pack
+		struct get_min_size_of_type_pack
+		{
+			static constexpr uint64_t size = std::min({ sizeof(First), sizeof(Rest)... });
+		};
+
+		template<>
+		/// @brief Helper type overload for errors, as void doesn't have a size
+		struct get_min_size_of_type_pack<void>
+		{
+			//No 'size' field to cause compilation error.
+		};
+
+		template<typename First, typename... Rest>
+		/// @brief Helper to get the minimum sizeof all types passed as template arguments
+		/// @tparam First The first type
+		/// @tparam ...Rest Parameter pack
+		static constexpr uint64_t get_min_size_of_type_pack_v = get_min_size_of_type_pack<First, Rest...>::size;
+
+		template<typename T>
+		/// @brief Helper struct to check if a type is [Non]ThreadSafe
+		/// @tparam T The type to check for
+		struct is_thread_safety_policy { static constexpr bool value = false; };
+
+		template<>
+		/// @brief Overload for ThreadSafe thread safety policy
+		struct is_thread_safety_policy<ThreadSafe> { static constexpr bool value = true; };
+
+		template<>
+		/// @brief Overload for NonThreadSafe thread safety policy
+		struct is_thread_safety_policy<NonThreadSafe> { static constexpr bool value = true; };
+
+		template<typename T>
+		/// @brief helper type to help determine if a type is [Non]ThreadSafe
+		/// @tparam T The type to check for
+		static constexpr bool is_thread_safety_policy_v = is_thread_safety_policy<T>::value;
+
+		template <typename First, typename... Rest>
+		/// @brief Checks if a parameter pack is formed by the same type
+		/// @tparam First The first type
+		/// @tparam ...Rest The rest of the parameter pack
+		struct is_parameter_pack_of_same_type
+		{
+			static_assert(std::conjunction_v<std::is_same<First, Rest>...>);
+			using type = First;
+		};
+
+		template<typename Callable>
+		/// @brief Helper to get the return type of a callable
+		/// @tparam Callable The functor
+		using return_type_of_callable_t = //Takes advantages of std::function's CTAD
+			typename decltype(std::function{ std::declval<Callable>() })::result_type;
+
+		template<size_t index, typename First, typename... Rest>
+		/// @brief Returns the type at index 'index' of a pack
+		/// @tparam First The first type
+		/// @tparam ...Rest The pack from which to extract the type
+		struct get_type_at_index_from_pack
+		{
+			static_assert(index < sizeof...(Rest), "Index was greater than sizeof...(Pack)!");
+			using type =
+				typename details::recurse_index_pack<index, First, Rest...>::type;
+		};
+
+		template<size_t index, typename First, typename... Rest>
+		/// @brief Returns the type at index 'index' of a pack
+		/// @tparam First The first type
+		/// @tparam ...Rest The pack from which to extract the type
+		using get_type_at_index_from_pack_t =
+			typename get_type_at_index_from_pack<index, First, Rest...>::type;
+
 		template<typename Type, typename First, typename... Rest>
+		/// @brief Returns the index of 'Type' in 'First' + 'Rest'
+		/// @tparam Type The type to search for		
 		struct get_index_of_type_from_pack
 		{
-			static constexpr uint64_t value = recurse_type_pack<std::is_same_v<Type, First>, std::is_same_v<Type, Rest>...>::value;
+			static constexpr uint64_t value =
+				details::recurse_type_pack<std::is_same_v<Type, First>, std::is_same_v<Type, Rest>...>::value;
 		};
 
 		template<typename Type, typename First, typename... Rest>
+		/// @brief Returns the index of 'Type' in 'First' + 'Rest'
+		/// @tparam Type The type to search for	
 		static constexpr uint64_t get_index_of_type_from_pack_v = get_index_of_type_from_pack<Type, First, Rest...>::value;
+
+		template<typename Type, typename First, typename... Rest>
+		/// @brief Checks if a 'Type' is not found in 'First' + 'Rest'
+		/// @tparam Type The type to check for
+		struct is_type_not_in_pack
+		{
+			//We take advantage of bool being 1 when converted to an int, and also use fold expressions
+			static constexpr bool value = (std::is_same_v<Type, First> +(std::is_same_v<Type, Rest> + ...)) < 1;
+		};
+
+		template<typename Type, typename First>
+		/// @brief Checks if a type is not found in 'First'
+		/// @tparam Type The type to check for
+		struct is_type_not_in_pack<Type, First>
+		{
+			static constexpr bool value = (std::is_same_v<Type, First>) < 1;
+		};
+
+		template<typename First, typename... Rest>
+		/// @brief Check if a parameter pack does not contain any duplicate types
+		struct is_pack_with_no_duplicates
+		{
+			static constexpr bool value =
+				is_type_not_in_pack<First, Rest...>::value && is_pack_with_no_duplicates<Rest...>::value;
+		};
+
+		template<typename First, typename Second>
+		/// @brief Check if a parameter pack does not contain any duplicate types
+		struct is_pack_with_no_duplicates<First, Second>
+		{
+			static constexpr bool value = is_type_not_in_pack<First, Second>::value;
+		};
+
+		template<typename First, typename... Rest>
+		/// @brief Check if a parameter pack does not contain any duplicate types
+		static constexpr bool is_pack_with_no_duplicates_v = is_pack_with_no_duplicates<First, Rest...>::value;
 	}
 
 	template<typename T>
