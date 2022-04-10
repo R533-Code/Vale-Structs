@@ -26,14 +26,19 @@ namespace vale
 	/// Thread safe array which provides facilities to access its content concurrently.
 	/// Does not possess iterators or .to_view() facilities to avoid false usages.
 	/// The mutex is public to permit CTAD. It is recommended NEVER to lock it,
-	/// as all methods but '.data()' and '.size()' locks it.
+	/// as all methods but '.data()' and '.size()' lock it.
 	/// @tparam T The type of the objects to store.
 	class array<T, nb_elem, ThreadSafe>
 	{
 		// Check that the array has a size > 0
 		static_assert(nb_elem > 0, "Array size should be greater than 0!");
 
-	public:		
+	public:
+		/// @brief Helper alias for iterators
+		using iterator = array_iterator<T>;
+		/// @brief Helper alias for const iterators
+		using const_iterator = array_iterator<const T>;
+
 		/// @brief Fills the array by assigning 'obj' to each of its item.
 		constexpr void fill(const T& obj) noexcept(std::is_nothrow_copy_assignable_v<T>)
 		{
@@ -239,6 +244,11 @@ namespace vale
 		static_assert(nb_elem > 0, "Array size should be greater than 0!");
 
 	public:
+		/// @brief Helper alias for iterators
+		using iterator = array_iterator<T>;
+		/// @brief Helper alias for const iterators
+		using const_iterator = array_iterator<const T>;
+
 		/// @brief Fills the array by assigning 'obj' to each of its item.
 		constexpr void fill(const T& obj) noexcept(std::is_nothrow_copy_assignable_v<T>)
 		{
