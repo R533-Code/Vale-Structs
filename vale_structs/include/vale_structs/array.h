@@ -182,7 +182,7 @@ namespace vale
 		/// @param function The function to which to pass the iterators followed by the argument pack
 		/// @param ...args Argument pack forwarded to 'function' after iterators
 		/// @return What is returned by the 'function'
-		constexpr auto pass_iterators(Func function, Args&&... args) -> details::return_type_of_callable_t<Func>
+		constexpr auto pass_iterators(Func function, Args&&... args) -> helpers::return_type_of_callable_t<Func>
 		{
 			std::scoped_lock lock{ mutex };
 			return function(contiguous_iterator(buffer), contiguous_iterator(buffer + nb_elem), std::forward<Args>(args)...);
@@ -205,7 +205,7 @@ namespace vale
 		/// @param and_result The functor to which the result of 'function' is passed
 		/// @param function The functor to which begin/end iterators and the parameter pack are passed
 		/// @param ...args The argument pack which is forwarded to 'function' after passing begin/end iterators
-		constexpr void pass_iterators_and(void(*and_result)(details::return_type_of_callable_t<Func>), Func function, Args&&... args)
+		constexpr void pass_iterators_and(void(*and_result)(helpers::return_type_of_callable_t<Func>), Func function, Args&&... args)
 		{
 			std::scoped_lock lock{ mutex };
 			and_result(function(contiguous_iterator(buffer), contiguous_iterator(buffer + nb_elem), std::forward<Args>(args)...));
@@ -355,7 +355,7 @@ namespace vale
 
 	//CTAD for vale::array: this works because of aggregate initialization
 	template <class First, class... Rest>
-	array(First, Rest...)->array<typename details::is_parameter_pack_of_same_type<First, Rest...>::type, 1 + sizeof...(Rest)>;
+	array(First, Rest...)->array<typename helpers::is_parameter_pack_of_same_type<First, Rest...>::type, 1 + sizeof...(Rest)>;
 
 	template<typename T, size_t size, typename ThreadSafety>
 	/// @brief writes the content of the array between '{}', separating the objects by ','.
