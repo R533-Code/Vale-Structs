@@ -62,7 +62,7 @@ namespace vale
 		/// If the index is greater than nb_elem - 1, throws std::out_of_range
 		/// @param index The index of the object
 		/// @return reference to the object
-		constexpr T& operator[](size_t index)
+		[[nodiscard]] constexpr T& operator[](size_t index)
 		{
 			std::scoped_lock lock(mutex);
 			if (index < nb_elem)
@@ -74,7 +74,7 @@ namespace vale
 		/// If the index is greater than nb_elem - 1, throws std::out_of_range
 		/// @param index The index of the object
 		/// @return const reference to the object
-		constexpr const T& operator[](size_t index) const
+		[[nodiscard]] constexpr const T& operator[](size_t index) const
 		{
 			std::scoped_lock lock(mutex);
 			if (index < nb_elem)
@@ -84,7 +84,7 @@ namespace vale
 
 		/// @brief Returns the last object in the array
 		/// @return const reference to the last object
-		constexpr const T& back() const
+		[[nodiscard]] constexpr const T& back() const
 		{
 			std::scoped_lock lock(mutex);
 			return buffer[nb_elem - 1];
@@ -92,7 +92,7 @@ namespace vale
 
 		/// @brief Returns the last object in the array
 		/// @return reference to the last object
-		constexpr T& back()
+		[[nodiscard]] constexpr T& back()
 		{
 			std::scoped_lock lock(mutex);
 			return buffer[nb_elem - 1];
@@ -100,7 +100,7 @@ namespace vale
 
 		/// @brief Returns the first object in the array
 		/// @return const reference to the first object
-		constexpr const T& front() const
+		[[nodiscard]] constexpr const T& front() const
 		{
 			std::scoped_lock lock(mutex);
 			return buffer[0];
@@ -108,7 +108,7 @@ namespace vale
 
 		/// @brief Returns the first object in the array
 		/// @return reference to the first object
-		constexpr T& front()
+		[[nodiscard]] constexpr T& front()
 		{
 			std::scoped_lock lock{ mutex };
 			return buffer[0];
@@ -177,11 +177,11 @@ namespace vale
 		/// vale::array<int, 10, ThreadSafe> arr1 = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 		/// arr1.pass_iterators(std::sort<array_iterator<int>>); //Sorts the array thread-safely
 		/// \endcode
-		/// @tparam Func 
-		/// @tparam ...Args 
-		/// @param function 
-		/// @param ...args 
-		/// @return 
+		/// @tparam Func Type of the function to which to pass the iterators followed by the argument pack
+		/// @tparam ...Args Parameter pack
+		/// @param function The function to which to pass the iterators followed by the argument pack
+		/// @param ...args Argument pack forwarded to 'function' after iterators
+		/// @return What is returned by the 'function'
 		constexpr auto pass_iterators(Func function, Args&&... args) -> details::return_type_of_callable_t<Func>
 		{
 			std::scoped_lock lock{ mutex };
@@ -215,17 +215,17 @@ namespace vale
 		/// The size of the array is the template parameter 'nb_elem'.
 		/// Does not lock the mutex protecting the data.
 		/// @return The size of the array
-		constexpr size_t size() const noexcept { return nb_elem; }
+		[[nodiscard]] constexpr size_t size() const noexcept { return nb_elem; }
 
 		/// @brief Returns a pointer to the beginning of the data
 		/// Does not lock the mutex protecting the data.
 		/// @return const pointer to the beginning of the data
-		constexpr const T* data() const noexcept { return buffer; }
+		[[nodiscard]] constexpr const T* data() const noexcept { return buffer; }
 
 		/// @brief Returns a pointer to the beginning of the data.
 		/// Does not lock the mutex protecting the data.
 		/// @return pointer to the beginning of the data
-		constexpr T* data() noexcept { return buffer; }
+		[[nodiscard]] constexpr T* data() noexcept { return buffer; }
 
 	public: //MEMBERS
 
@@ -260,7 +260,7 @@ namespace vale
 		/// If the index is greater than nb_elem - 1, throws std::out_of_range
 		/// @param index The index of the object
 		/// @return reference to the object
-		constexpr T& operator[](size_t index)
+		[[nodiscard]] constexpr T& operator[](size_t index)
 		{
 			if (index < nb_elem)
 				return buffer[index];
@@ -271,7 +271,7 @@ namespace vale
 		/// If the index is greater than nb_elem - 1, throws std::out_of_range
 		/// @param index The index of the object
 		/// @return const reference to the object
-		constexpr const T& operator[](size_t index) const
+		[[nodiscard]] constexpr const T& operator[](size_t index) const
 		{
 			if (index < nb_elem)
 				return buffer[index];
@@ -280,55 +280,55 @@ namespace vale
 
 		/// @brief Returns the last object in the array
 		/// @return const reference to the last object
-		constexpr const T& back() const noexcept { return buffer[nb_elem - 1]; }
+		[[nodiscard]] constexpr const T& back() const	noexcept { return buffer[nb_elem - 1]; }
 
 		/// @brief Returns the last object in the array
 		/// @return reference to the last object
-		constexpr T& back()		  noexcept { return buffer[nb_elem - 1]; }
+		[[nodiscard]] constexpr T& back()				noexcept { return buffer[nb_elem - 1]; }
 
 		/// @brief Returns the first object in the array
 		/// @return const reference to the first object
-		constexpr const T& front() const noexcept { return buffer[0]; }
+		[[nodiscard]] constexpr const T& front() const	noexcept { return buffer[0]; }
 
 		/// @brief Returns the first object in the array
 		/// @return reference to the first object
-		constexpr T& front()			 noexcept { return buffer[0]; }
+		[[nodiscard]] constexpr T& front()				noexcept { return buffer[0]; }
 
 		/// @brief Returns the size of the array.
 		/// The size of the array is the template parameter 'nb_elem'.
 		/// @return The size of the array
-		constexpr size_t size()	const noexcept { return nb_elem; }
+		[[nodiscard]] constexpr size_t size()	const	noexcept { return nb_elem; }
 
 		/// @brief Returns a pointer to the beginning of the data
 		/// @return const pointer to the beginning of the data
-		constexpr const T* data() const noexcept { return buffer; }
+		[[nodiscard]] constexpr const T* data() const	noexcept { return buffer; }
 
 		/// @brief Returns a pointer to the beginning of the data
 		/// @return pointer to the beginning of the data
-		constexpr T* data()				noexcept { return buffer; }
+		[[nodiscard]] constexpr T* data()				noexcept { return buffer; }
 
 		/// @brief Returns an iterator to the beginning of the array
 		/// @return iterator to the beginning of the array
-		constexpr array_iterator<T> begin()		noexcept { return array_iterator<T>(buffer); }
+		[[nodiscard]] constexpr array_iterator<T> begin()		noexcept { return array_iterator<T>(buffer); }
 		/// @brief Returns an iterator to the end of the array
 		/// @return iterator to the end of the array
-		constexpr array_iterator<T> end()		noexcept { return array_iterator<T>(buffer + nb_elem); }
+		[[nodiscard]] constexpr array_iterator<T> end()		noexcept { return array_iterator<T>(buffer + nb_elem); }
 
 		/// @brief Returns an const iterator to the beginning of the array
 		/// @return const iterator to the beginning of the array
-		constexpr array_iterator<const T> cbegin()		const noexcept { return buffer + nb_elem; }
+		[[nodiscard]] constexpr array_iterator<const T> cbegin()		const noexcept { return buffer + nb_elem; }
 		/// @brief Returns an const iterator to the end of the array
 		/// @return const iterator to the end of the array
-		constexpr array_iterator<const T> cend()		const noexcept { return buffer + nb_elem; }
+		[[nodiscard]] constexpr array_iterator<const T> cend()		const noexcept { return buffer + nb_elem; }
 
 		/// @brief Returns a view of all the items in the struct
 		/// @return view of all the items in the struct
-		constexpr array_view<T> to_view() noexcept { return array_view<T>(buffer, nb_elem); }
+		[[nodiscard]] constexpr array_view<T> to_view() noexcept { return array_view<T>(buffer, nb_elem); }
 		
 		/// @brief Returns a view of all the items in the struct starting from offset.
 		/// Throws if offset >= nb_elem.
 		/// @return view of all the items in the struct beginning from offset, or throws.
-		array_view<T> to_view(size_t offset)
+		[[nodiscard]] array_view<T> to_view(size_t offset)
 		{ 
 			if (offset < nb_elem)
 				return array_view<T>(buffer + offset, nb_elem - offset);
@@ -338,7 +338,7 @@ namespace vale
 		/// @brief Returns a view of 'size' items in the struct starting from offset.
 		/// Throws if offset >= nb_elem.
 		/// @return view of 'size' items in the struct beginning from offset, or throws.
-		array_view<T> to_view(size_t offset, size_t size)
+		[[nodiscard]] array_view<T> to_view(size_t offset, size_t size)
 		{
 			if (offset + size - 1 < nb_elem)
 			{
