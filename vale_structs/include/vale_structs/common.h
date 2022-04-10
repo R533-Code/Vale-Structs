@@ -53,6 +53,94 @@ namespace vale
 		/// @tparam Callable The functor
 		using return_type_of_callable_t = //Takes advantages of std::function's CTAD
 			typename decltype(std::function{ std::declval<Callable>() })::result_type;
+
+		template<typename First, typename... Rest>
+		/// @brief Helper type to access the maximum sizeof all types passed as template arguments
+		/// @tparam First The first type
+		/// @tparam ...Rest Parameter pack
+		struct get_max_size_of_type_pack
+		{
+			static constexpr uint64_t size = std::max({ sizeof(First), sizeof(Rest)...});
+		};
+
+		template<>
+		/// @brief Helper type overload for errors, as void doesn't have a size
+		struct get_max_size_of_type_pack<void>
+		{
+			//No 'size' field so this results in a compilation error
+		};
+
+		template<typename First, typename... Rest>
+		/// @brief Helper to get the maximum sizeof all types passed as template arguments
+		/// @tparam First The first type
+		/// @tparam ...Rest Parameter pack
+		static constexpr uint64_t get_max_size_of_type_pack_v = get_max_size_of_type_pack<First, Rest...>::size;
+
+		template<typename First, typename... Rest>
+		/// @brief Helper to get the minimum sizeof all types passed as template arguments
+		/// @tparam First The first type
+		/// @tparam ...Rest Parameter pack
+		struct get_min_size_of_type_pack
+		{
+			static constexpr uint64_t size = std::min({ sizeof(First), sizeof(Rest)...});
+		};
+
+		template<>
+		/// @brief Helper type overload for errors, as void doesn't have a size
+		struct get_min_size_of_type_pack<void>
+		{
+			//No 'size' field to cause compilation error.
+		};
+
+		template<typename First, typename... Rest>
+		/// @brief Helper to get the minimum sizeof all types passed as template arguments
+		/// @tparam First The first type
+		/// @tparam ...Rest Parameter pack
+		static constexpr uint64_t get_min_size_of_type_pack_v = get_min_size_of_type_pack<First, Rest...>::size;
+
+		template<size_t index, typename First, typename... Pack>
+		/// @brief Helper type that stores the type at index 'index' of the type passed as template arguments.
+		/// @tparam First The first type
+		/// @tparam ...Pack Type pack
+		struct recurse_index_pack
+		{
+			//we recurse till the index is 0
+			using type = 
+				typename recurse_index_pack<index - 1, Pack...>::type;
+		};
+
+		template<typename First, typename... Pack>
+		/// @brief Helper type that stores the type at index 'index' of the type passed as template arguments.
+		/// This is the overload for when the type was found: in that case 'First' is the type to return.
+		/// @tparam First The type at the passed index
+		/// @tparam ...Pack Type pack
+		struct recurse_index_pack<0, First, Pack...>
+		{
+			using type = First;
+		};
+
+		template<size_t index>
+		/// @brief Helper type overload for when the index was greater than the size of a pack
+		struct recurse_index_pack<index, void>
+		{
+			//We do not implement a ::type field, which will cause a compilation error.
+		};
+
+		template<size_t index, typename... Pack>
+		/// @brief Returns the type at index 'index' of a pack
+		/// @tparam ...Pack The pack from which to extract the type
+		struct get_type_at_index_from_pack
+		{
+			static_assert(index < sizeof...(Pack) - 1, "Index was greater than sizeof...(Pack)!");
+			using type = 
+				typename recurse_index_pack<index, Pack...>::type;
+		};
+
+		template<size_t index, typename... Pack>
+		/// @brief Returns the type at index 'index' of a pack
+		/// @tparam ...Pack The pack from which to extract the type
+		using get_type_at_index_from_pack_t = 
+			typename get_type_at_index_from_pack<index, Pack...>::type;
 	}
 
 	template<typename T>
