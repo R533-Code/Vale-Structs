@@ -10,16 +10,16 @@ namespace vale
 	/// @brief Thread safety policy which signifies to a struct to use its thread safe implementation
 	struct ThreadSafe {};
 	/// @brief Thread safety policy which signifies to a struct to use its non-thread safe implementation
-	struct NonThreadSafe{};
+	struct NonThreadSafe {};
 
 	/// @brief Buffer policy which signifies to a struct to use an optional buffer
-	struct OptionalBuffer{};
+	struct OptionalBuffer {};
 	/// @brief Buffer policy which signifies to a struct to not use an optional buffer
-	struct NonOptionalBuffer{};
+	struct NonOptionalBuffer {};
 
 	/// @brief Contains meta-programing utilities
 	namespace details
-	{	
+	{
 		template<size_t index, typename First, typename... Pack>
 		/// @brief Helper type that stores the type at index 'index' of the type passed as template arguments.
 		/// @tparam First The first type
@@ -27,7 +27,7 @@ namespace vale
 		struct recurse_index_pack
 		{
 			//we recurse till the index is 0
-			using type = 
+			using type =
 				typename recurse_index_pack<index - 1, Pack...>::type;
 		};
 
@@ -194,7 +194,7 @@ namespace vale
 		struct is_type_not_in_pack
 		{
 			//We take advantage of bool being 1 when converted to an int, and also use fold expressions
-			static constexpr bool value = (std::is_same_v<Type, First> +(std::is_same_v<Type, Rest> + ...)) < 1;
+			static constexpr bool value = static_cast<uint64_t>(std::is_same_v<Type, First> +(std::is_same_v<Type, Rest> +...)) < 1;
 		};
 
 		template<typename Type, typename First>
@@ -202,7 +202,7 @@ namespace vale
 		/// @tparam Type The type to check for
 		struct is_type_not_in_pack<Type, First>
 		{
-			static constexpr bool value = (std::is_same_v<Type, First>) < 1;
+			static constexpr bool value = static_cast<uint64_t>(std::is_same_v<Type, First>) < 1;
 		};
 
 		template<typename First, typename... Rest>
@@ -240,7 +240,7 @@ namespace vale
 		//CONSTRUCTOR
 		constexpr contiguous_iterator(pointer ptr)
 			: ptr(ptr) {}
-		
+
 		//OPERATOR
 		constexpr value_type& operator*() const { return *ptr; }
 		constexpr value_type& operator->() const { return *ptr; }
@@ -256,11 +256,11 @@ namespace vale
 		//COMPARISONS
 		friend constexpr bool operator== (const contiguous_iterator& a, const contiguous_iterator& b) { return a.ptr == b.ptr; };
 		friend constexpr bool operator!= (const contiguous_iterator& a, const contiguous_iterator& b) { return a.ptr != b.ptr; };
-		friend constexpr bool operator<	(const contiguous_iterator& a, const contiguous_iterator& b) { return a.ptr < b.ptr; } 
-		friend constexpr bool operator>	(const contiguous_iterator& a, const contiguous_iterator& b) { return a.ptr > b.ptr; } 
-		friend constexpr bool operator<=(const contiguous_iterator& a, const contiguous_iterator& b) { return a.ptr <= b.ptr; } 
-		friend constexpr bool operator>=(const contiguous_iterator& a, const contiguous_iterator& b) { return a.ptr >= b.ptr; } 
-	
+		friend constexpr bool operator<	(const contiguous_iterator& a, const contiguous_iterator& b) { return a.ptr < b.ptr; }
+		friend constexpr bool operator>	(const contiguous_iterator& a, const contiguous_iterator& b) { return a.ptr > b.ptr; }
+		friend constexpr bool operator<=(const contiguous_iterator& a, const contiguous_iterator& b) { return a.ptr <= b.ptr; }
+		friend constexpr bool operator>=(const contiguous_iterator& a, const contiguous_iterator& b) { return a.ptr >= b.ptr; }
+
 	private:
 		pointer ptr;
 	};
@@ -315,7 +315,7 @@ namespace vale
 				return ptr[0];
 			throw std::out_of_range("vale::contiguous_struct_view: View was empty!");
 		}
-		
+
 		/// @brief Returns the last object in the array
 		/// @return const reference to the last object
 		constexpr const T& back() const
@@ -417,7 +417,7 @@ namespace vale
 	/// @brief writes the content of a view between '{}', separating objects by ','. 
 	std::ostream& operator<<(std::ostream& os, const contiguous_struct_view<T>& var)
 	{
-		os << "{";		
+		os << "{";
 		for (size_t i = 0; i < var.size() - 1; i++)
 			os << *(var.data() + i) << ", ";
 		os << *(var.data() + var.size() - 1) << '}';
