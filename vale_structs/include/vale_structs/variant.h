@@ -122,4 +122,12 @@ namespace vale
 		/// active type was not any of the types in the pack.
 		void destruct_active() {}
 	};
+
+	template<typename First, typename... Rest>
+	std::ostream& operator<<(std::ostream& os, const variant<First, Rest...>& var)
+	{
+		auto func = [&](const auto& val) { os << val; };
+		//DO PRINTING
+		return os;
+	}
 }
