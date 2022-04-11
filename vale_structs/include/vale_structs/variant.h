@@ -111,7 +111,7 @@ namespace vale
 		void destruct_active()
 		{
 			if (index_t == type)
-				reinterpret_cast<const FirstT*>(buffer)->~First();
+				reinterpret_cast<const FirstT*>(buffer)->~FirstT(); //Call destructor
 			else //We recurse, popping the First type from the pack, and incrementing the index
 				destruct_active<index_t + 1, RestT...>();
 		}
