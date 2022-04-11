@@ -64,7 +64,7 @@ namespace vale
 			{
 				return *reinterpret_cast<T*>(buffer);
 			}
-			throw std::bad_variant_access{};
+			throw /*vale::bad_variant_access{}*/;
 		}
 
 		template<typename T>
@@ -79,7 +79,7 @@ namespace vale
 			{
 				return *reinterpret_cast<const T*>(buffer);
 			}
-			throw std::bad_variant_access{};
+			throw /*vale::bad_variant_access{}*/;
 		}
 
 		/// @brief Returns the index of the current active type
@@ -103,20 +103,20 @@ namespace vale
 			new(buffer) T(std::forward<Args>(args)...);
 		}
 
-		template<size_t index = 0, typename First, typename... Rest>
+		template<size_t index_t = 0, typename FirstT, typename... RestT>
 		/// @brief Destructs the active type, using recursion, to check for the type to destroy.
 		/// O(n) implementation of destruct_active().
-		/// @tparam First The first type
-		/// @tparam ...Rest The rest of the pack
+		/// @tparam FirstT The first type
+		/// @tparam ...RestT The rest of the pack
 		void destruct_active()
 		{
-			if (index == type)
-				reinterpret_cast<const First*>(buffer)->~First();
+			if (index_t == type)
+				reinterpret_cast<const FirstT*>(buffer)->~First();
 			else //We recurse, popping the First type from the pack, and incrementing the index
-				destruct_active<index + 1, Rest...>();
+				destruct_active<index_t + 1, RestT...>();
 		}
 
-		template<size_t index>
+		template<size_t index_t>
 		/// @brief Overload of destruct_active for when there are no longer a type.
 		/// As we have checked for all the types in the pack, this means that
 		/// active type was not any of the types in the pack.
