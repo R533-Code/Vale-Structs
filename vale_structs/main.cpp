@@ -7,13 +7,28 @@
 
 #include <vale_structs/array.h>
 #include <vale_structs/variant.h>
+#include <variant>
 
 using namespace vale;
 
 #define PRINT(val) std::cout << #val << ": " << val << '\n'
 
+struct helper
+{
+	helper() { std::cout << "helper() called\n"; }
+	helper(const helper&) { std::cout << "helper(const helper&) called\n"; }
+	helper(helper&&) { std::cout << "helper(helper&&) called\n"; }
+	~helper() { std::cout << "~helper called!\n"; }
+};
+
 int main(int argc, char** argv)
 {
+	vale::variant<int, float, helper> arr(1.01f);
+	std::cout << arr.get<float>() << '\n';
+	arr = helper{};
+	arr = 10;
+	std::cout << arr.get<int>() << '\n';
+	
 	vale::array<int, 10, ThreadSafe> arr1 = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 	PRINT(arr1);
 	std::random_device rd;
