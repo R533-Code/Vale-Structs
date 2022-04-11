@@ -9,7 +9,7 @@ namespace vale
 	/// @tparam nb_elem The size of the array
 	/// @tparam ThreadSafety The thread safety policy of the array
 	template<typename T, size_t nb_elem, typename ThreadSafety = NonThreadSafe>
-	class array { static_assert(details::is_thread_safety_policy_v<ThreadSafety>, "ThreadSafety can only be ThreadSafe/NonThreadSafe"); };
+	class array { static_assert(helpers::is_thread_safety_policy_v<ThreadSafety>, "ThreadSafety can only be ThreadSafe/NonThreadSafe"); };
 
 	template<typename T>
 	/// @brief Alias over a contiguous_struct_view for more easy typing
