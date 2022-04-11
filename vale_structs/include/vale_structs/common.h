@@ -205,6 +205,9 @@ namespace vale
 			static constexpr bool value = static_cast<uint64_t>(std::is_same_v<Type, First>) < 1;
 		};
 
+		template<typename Type, typename First, typename... Rest>
+		static constexpr bool is_type_not_in_pack_v = is_type_not_in_pack<Type, First, Rest...>::value;
+
 		template<typename First, typename... Rest>
 		/// @brief Check if a parameter pack does not contain any duplicate types
 		struct is_pack_with_no_duplicates
