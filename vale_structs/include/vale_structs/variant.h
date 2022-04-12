@@ -1,5 +1,6 @@
 #pragma once
 #include <vale_structs/common.h>
+#include <vale_structs/array.h>
 
 namespace vale
 {
@@ -34,7 +35,8 @@ namespace vale
 		/// @brief Destroys the variant, destroying the active object
 		~variant()
 		{
-			destruct_active<0, First, Rest...>();
+			//destruct_active_linear<0, First, Rest...>();
+			destruct_active_constant();
 		}
 
 		template<typename T>
@@ -46,7 +48,7 @@ namespace vale
 		{
 			static_assert(!helpers::is_type_not_in_pack_v<T, First, Rest...>,
 				"Type isn't part of the template parameter pack of the variant!");
-			destruct_active<0, First, Rest...>(); //destroy the active object
+			destruct_active_linear<0, First, Rest...>(); //destroy the active object
 			construct<T>(object); //constructs the new object
 
 			return *this;
@@ -101,26 +103,47 @@ namespace vale
 		{
 			type = helpers::get_index_of_type_from_pack_v<T, First, Rest...>;
 			new(buffer) T(std::forward<Args>(args)...);
-		}
+		}		
 
 		template<size_t index_t = 0, typename FirstT, typename... RestT>
 		/// @brief Destructs the active type, using recursion, to check for the type to destroy.
 		/// O(n) implementation of destruct_active().
 		/// @tparam FirstT The first type
 		/// @tparam ...RestT The rest of the pack
-		void destruct_active()
+		void destruct_active_linear()
 		{
 			if (index_t == type)
 				reinterpret_cast<const FirstT*>(buffer)->~FirstT(); //Call destructor
 			else //We recurse, popping the First type from the pack, and incrementing the index
-				destruct_active<index_t + 1, RestT...>();
+				destruct_active_linear<index_t + 1, RestT...>();
 		}
 
 		template<size_t index_t>
 		/// @brief Overload of destruct_active for when there are no longer a type.
 		/// As we have checked for all the types in the pack, this means that
 		/// active type was not any of the types in the pack.
-		void destruct_active() {}
+		void destruct_active_linear() {}		
+
+		/// @brief Destroys the active object in constant time.
+		/// This might be faster if there are no trivial types,
+		/// or a lot of non-trivial type.
+		void destruct_active_constant()
+		{
+			//We initialize an array of pointers to the destructor of each
+			//type. The index is the destructor to call.
+			static const vale::array dt
+				= { &destruct_active_constant_delete<First>,
+				&destruct_active_constant_delete<Rest>... };
+			dt[type](buffer);
+		}
+
+		template<typename T>
+		/// @brief Helper static method that calls the destructor of an object
+		/// @tparam T The type to cast to, to call its destructor
+		static void destruct_active_constant_delete(void* buffer)
+		{
+			reinterpret_cast<const T*>(buffer)->~T();
+		}
 	};
 
 	template<typename First, typename... Rest>
