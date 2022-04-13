@@ -23,12 +23,11 @@ struct helper
 
 int main(int argc, char** argv)
 {
-	vale::variant<int, float, helper> arr(1.01f);
-	std::cout << arr.get<float>() << '\n';
-	arr = helper{};
+	vale::variant<int, float> arr(1.01f);
+	std::cout << arr << '\n';
 	arr = 10;
-	std::cout << arr.get<int>() << '\n';
-	
+	std::cout << arr << '\n';
+
 	vale::array<int, 10, ThreadSafe> arr1 = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 	PRINT(arr1);
 	std::random_device rd;
