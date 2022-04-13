@@ -84,6 +84,24 @@ namespace vale
 			throw /*vale::bad_variant_access{}*/;
 		}
 
+		template<typename Func>
+		std::enable_if_t<std::is_function_v<Func>, void> visit(Func&& call) const
+		{
+			static const vale::array dt //data table
+				= { &call<First>,
+				&call<Rest>... };
+			dt[type]();
+		}
+
+		template<typename Func>
+		std::enable_if_t<std::is_function_v<Func>, void> visit(Func&& call)
+		{
+			static const vale::array dt //data table
+				= { &call<First>,
+				&call<Rest>... };
+			dt[type]();
+		}
+
 		/// @brief Returns the index of the current active type
 		/// @return The active index, or max_index() + 1 to signify empty state
 		uint64_t index() const noexcept { return type; }
@@ -92,7 +110,7 @@ namespace vale
 		/// @return The number of types in the variant parameter pack
 		constexpr uint64_t max_index() const noexcept { return sizeof...(Rest); }
 
-	private:	
+	private:
 
 		template<typename T, typename... Args>
 		/// @brief Constructs an object of type 'T' in the buffer
@@ -103,7 +121,9 @@ namespace vale
 		{
 			type = helpers::get_index_of_type_from_pack_v<T, First, Rest...>;
 			new(buffer) T(std::forward<Args>(args)...);
-		}		
+		}
+
+		/*LINEAR-COMPLEXITY ALGORITHMS*/
 
 		template<size_t index_t = 0, typename FirstT, typename... RestT>
 		/// @brief Destructs the active type, using recursion, to check for the type to destroy.
@@ -122,12 +142,14 @@ namespace vale
 		/// @brief Overload of destruct_active for when there are no longer a type.
 		/// As we have checked for all the types in the pack, this means that
 		/// active type was not any of the types in the pack.
-		void destruct_active_linear() {}		
+		void destruct_active_linear() {}
+
+		/*CONSTANT-COMPLEXITY ALGORITHMS*/
 
 		/// @brief Destroys the active object in constant time.
 		/// This might be faster if there are no trivial types,
 		/// or a lot of non-trivial type.
-		void destruct_active_constant()
+		inline void destruct_active_constant()
 		{
 			//We initialize an array of pointers to the destructor of each
 			//type. The index is the destructor to call.
@@ -143,14 +165,39 @@ namespace vale
 		static void destruct_active_constant_delete(void* buffer)
 		{
 			reinterpret_cast<const T*>(buffer)->~T();
+		}		
+
+		/// @brief Helper method to print a variant's active content
+		/// @param os The ostream in which to << the content
+		inline void print_variant(std::ostream& os) const
+		{
+			//We initialize an array of pointers to the printing method of each
+			//type. The index is the function to call.
+			static const vale::array dt
+				= { &print_variant_ptr<First>,
+				&print_variant_ptr<Rest>... };
+			dt[type](os, buffer);
 		}
+
+		template<typename T>
+		/// @brief Helper static method that converts the buffer to the appropriate type and << in 'os'
+		/// @tparam T The type to which to cast 'buffer'
+		/// @param os The ostream in which to << the casted result
+		/// @param buffer The buffer to cast
+		static void print_variant_ptr(std::ostream& os, const void* buffer)
+		{
+			os << *reinterpret_cast<const T*>(buffer);
+		}
+
+		template<typename First, typename... Rest>
+		friend std::ostream& operator<<(std::ostream& os, const variant<First, Rest...>& var);
 	};
 
 	template<typename First, typename... Rest>
+	/// @brief writes the content of the active object in the variant to 'os'
 	std::ostream& operator<<(std::ostream& os, const variant<First, Rest...>& var)
 	{
-		auto func = [&](const auto& val) { os << val; };
-		//DO PRINTING
+		var.print_variant(os);
 		return os;
 	}
 }
