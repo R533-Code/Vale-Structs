@@ -92,6 +92,18 @@ namespace vale
 		/// @return The number of types in the variant parameter pack
 		constexpr uint64_t max_index() const noexcept { return sizeof...(Rest); }
 
+		/// @brief Helper method to print a variant's active content
+		/// @param os The ostream in which to << the content
+		inline void print_variant(std::ostream& os) const
+		{
+			//We initialize an array of pointers to the printing method of each
+			//type. The index is the function to call.
+			static const vale::array dt
+				= { &print_variant_ptr<First>,
+				&print_variant_ptr<Rest>... };
+			dt[type](os, buffer);
+		}
+
 	private:
 
 		template<typename T, typename... Args>
@@ -149,18 +161,6 @@ namespace vale
 			reinterpret_cast<const T*>(buffer)->~T();
 		}		
 
-		/// @brief Helper method to print a variant's active content
-		/// @param os The ostream in which to << the content
-		inline void print_variant(std::ostream& os) const
-		{
-			//We initialize an array of pointers to the printing method of each
-			//type. The index is the function to call.
-			static const vale::array dt
-				= { &print_variant_ptr<First>,
-				&print_variant_ptr<Rest>... };
-			dt[type](os, buffer);
-		}
-
 		template<typename T>
 		/// @brief Helper static method that converts the buffer to the appropriate type and << in 'os'
 		/// @tparam T The type to which to cast 'buffer'
@@ -170,9 +170,6 @@ namespace vale
 		{
 			os << *reinterpret_cast<const T*>(buffer);
 		}
-
-		//To be able to access print_variant()
-		friend std::ostream& operator<< <>(std::ostream& os, const variant& var);
 	};
 
 	template<typename First, typename... Rest>
