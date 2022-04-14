@@ -172,12 +172,12 @@ namespace vale
 		}
 
 		//To be able to access print_variant()
-		friend std::ostream& operator<<(std::ostream& os, const variant& var);
+		friend std::ostream& operator<< <>(std::ostream& os, const variant& var);
 	};
 
 	template<typename First, typename... Rest>
 	/// @brief writes the content of the active object in the variant to 'os'
-	std::ostream& operator<<(std::ostream& os, const variant<First, Rest...>& var)
+	static std::ostream& operator<<(std::ostream& os, const variant<First, Rest...>& var)
 	{
 		var.print_variant(os);
 		return os;
