@@ -28,5 +28,6 @@ target_precompile_headers(ValeStructsTest PUBLIC
 	"$<$<COMPILE_LANGUAGE:CXX>:${PROJECT_SOURCE_DIR}/vale_structs/utils/comppch.h>"
 )
 
+enable_testing()
 add_test(NAME ValeStructsTest
 	COMMAND ValeStructsTest)
