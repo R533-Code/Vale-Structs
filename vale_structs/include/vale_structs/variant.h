@@ -189,7 +189,7 @@ namespace vale
 			os << *reinterpret_cast<const T*>(buffer);
 		}
 
-		template<typename First, typename... Rest>
+		//To be able to access print_variant()
 		friend std::ostream& operator<<(std::ostream& os, const variant<First, Rest...>& var);
 	};
 
