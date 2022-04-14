@@ -3,10 +3,10 @@ Header-only `C++` container and helper classes.
 
 # Classes to Implement:
 - [X] `vale::array`: a stack allocated fixed array of objects
+- [X] `vale::variant`: a type-safe union (in progress)
 - [ ] `vale::vector`: a heap allocated variable-sized array
 - [ ] `vale::string`: a string class with helpful methods for string manipulation
 - [ ] `vale::list`: a linked list
-- [ ] `vale::variant`: a type-union
 - [ ] `vale::thread_pool`: a thread pool
 
 # Goals:
