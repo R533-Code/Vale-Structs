@@ -231,7 +231,7 @@ namespace vale
 		{
 			std::scoped_lock lock{ mutex };
 			os << "{";
-			for (size_t i = 0; i < size - 1; i++)
+			for (size_t i = 0; i < nb_elem; i++)
 				os << *(var.data() + i) << ", ";
 			os << *(var.data() + size - 1) << '}';
 		}
@@ -359,7 +359,7 @@ namespace vale
 		inline void print(std::ostream& os) const
 		{
 			os << "{";
-			for (size_t i = 0; i < size - 1; i++)
+			for (size_t i = 0; i < nb_elem; i++)
 				os << *(var.data() + i) << ", ";
 			os << *(var.data() + size - 1) << '}';
 		}
