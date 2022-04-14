@@ -94,7 +94,7 @@ namespace vale
 
 		/// @brief Helper method to print a variant's active content
 		/// @param os The ostream in which to << the content
-		inline void print_variant(std::ostream& os) const
+		inline void print(std::ostream& os) const
 		{
 			//We initialize an array of pointers to the printing method of each
 			//type. The index is the function to call.
@@ -176,7 +176,7 @@ namespace vale
 	/// @brief writes the content of the active object in the variant to 'os'
 	static std::ostream& operator<<(std::ostream& os, const variant<First, Rest...>& var)
 	{
-		var.print_variant(os);
+		var.print(os);
 		return os;
 	}
 }

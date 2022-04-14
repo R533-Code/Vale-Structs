@@ -227,6 +227,15 @@ namespace vale
 		/// @return pointer to the beginning of the data
 		[[nodiscard]] constexpr T* data() noexcept { return buffer; }
 
+		inline void print(std::ostream& os) const
+		{
+			std::scoped_lock lock{ mutex };
+			os << "{";
+			for (size_t i = 0; i < size - 1; i++)
+				os << *(var.data() + i) << ", ";
+			os << *(var.data() + size - 1) << '}';
+		}
+
 	public: //MEMBERS
 
 		/// @brief C-style array of objects
@@ -347,6 +356,14 @@ namespace vale
 			throw std::out_of_range("vale::array: offset + size was greater than size!");
 		}
 
+		inline void print(std::ostream& os) const
+		{
+			os << "{";
+			for (size_t i = 0; i < size - 1; i++)
+				os << *(var.data() + i) << ", ";
+			os << *(var.data() + size - 1) << '}';
+		}
+
 	public: //MEMBERS
 
 		/// @brief C-style array of objects
@@ -360,16 +377,9 @@ namespace vale
 	template<typename T, size_t size, typename ThreadSafety>
 	/// @brief writes the content of the array between '{}', separating the objects by ','.
 	/// Will lock the mutex of the array if its thread safety policy is ThreadSafe.
-	std::ostream& operator<<(std::ostream& os, const array<T, size, ThreadSafety>& var)
+	static std::ostream& operator<<(std::ostream& os, const array<T, size, ThreadSafety>& var)
 	{
-		if constexpr (std::is_same_v<ThreadSafety, ThreadSafe>)
-		{
-			std::scoped_lock lock(var.mutex); //Lock the array
-		}
-		os << "{";
-		for (size_t i = 0; i < size - 1; i++)
-			os << *(var.data() + i) << ", ";
-		os << *(var.data() + size - 1) << '}';
+		var.print(os);
 		return os;
 	}
 }
