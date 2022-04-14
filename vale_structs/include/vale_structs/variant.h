@@ -84,24 +84,6 @@ namespace vale
 			throw /*vale::bad_variant_access{}*/;
 		}
 
-		template<typename Func>
-		std::enable_if_t<std::is_function_v<Func>, void> visit(Func&& call) const
-		{
-			static const vale::array dt //data table
-				= { &call<First>,
-				&call<Rest>... };
-			dt[type]();
-		}
-
-		template<typename Func>
-		std::enable_if_t<std::is_function_v<Func>, void> visit(Func&& call)
-		{
-			static const vale::array dt //data table
-				= { &call<First>,
-				&call<Rest>... };
-			dt[type]();
-		}
-
 		/// @brief Returns the index of the current active type
 		/// @return The active index, or max_index() + 1 to signify empty state
 		uint64_t index() const noexcept { return type; }
@@ -190,7 +172,7 @@ namespace vale
 		}
 
 		//To be able to access print_variant()
-		friend std::ostream& operator<<(std::ostream& os, const variant<First, Rest...>& var);
+		friend std::ostream& operator<<(std::ostream& os, const variant& var);
 	};
 
 	template<typename First, typename... Rest>
