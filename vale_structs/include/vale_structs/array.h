@@ -227,13 +227,15 @@ namespace vale
 		/// @return pointer to the beginning of the data
 		[[nodiscard]] constexpr T* data() noexcept { return buffer; }
 
+		/// @brief Prints the content of the array in 'os'
+		/// @param os The ostream in which to << the array's content
 		inline void print(std::ostream& os) const
 		{
 			std::scoped_lock lock{ mutex };
 			os << "{";
 			for (size_t i = 0; i < nb_elem; i++)
-				os << *(var.data() + i) << ", ";
-			os << *(var.data() + size - 1) << '}';
+				os << buffer[i] << ", ";
+			os << buffer[nb_elem - 1] << '}';
 		}
 
 	public: //MEMBERS
@@ -356,12 +358,14 @@ namespace vale
 			throw std::out_of_range("vale::array: offset + size was greater than size!");
 		}
 
+		/// @brief Prints the content of the array in 'os'
+		/// @param os The ostream in which to << the array's content
 		inline void print(std::ostream& os) const
 		{
 			os << "{";
 			for (size_t i = 0; i < nb_elem; i++)
-				os << *(var.data() + i) << ", ";
-			os << *(var.data() + size - 1) << '}';
+				os << buffer[i] << ", ";
+			os << buffer[nb_elem - 1] << '}';
 		}
 
 	public: //MEMBERS
