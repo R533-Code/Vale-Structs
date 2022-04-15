@@ -15,7 +15,7 @@ using namespace vale;
 
 struct helper
 {
-	helper() { std::cout << "helper() called" << std::endl; throw; }
+	helper() { std::cout << "helper() called" << std::endl; throw std::exception{}; }
 	helper(const helper&) { std::cout << "helper(const helper&) called\n"; }
 	helper(helper&&) noexcept { std::cout << "helper(helper&&) called\n"; }
 	~helper() { std::cout << "~helper called!\n"; }

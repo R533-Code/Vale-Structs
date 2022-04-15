@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+#include <exception>
+
 #include <thread>
 #include <mutex>
 #include <condition_variable>
