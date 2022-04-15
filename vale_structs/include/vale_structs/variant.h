@@ -85,12 +85,16 @@ namespace vale
 		}
 
 		/// @brief Returns the index of the current active type
-		/// @return The active index, or max_index() + 1 to signify empty state
+		/// @return The active index, or max_index() + 1 to signify invalid state
 		uint64_t index() const noexcept { return type; }
 
 		/// @brief Returns the maximum index that can be active.
 		/// @return The number of types in the variant parameter pack
 		constexpr uint64_t max_index() const noexcept { return sizeof...(Rest); }
+
+		/// @brief Checks if the variant is in a valid state
+		/// @return true if the variant is valid, or false
+		bool is_valid() const noexcept { return type == sizeof...(Rest) + 1;}
 
 		/// @brief Helper method to print a variant's active content
 		/// @param os The ostream in which to << the content
@@ -113,8 +117,22 @@ namespace vale
 		/// @param ...args The arguments to forward to the constructor
 		void construct(Args&&... args)
 		{
-			type = helpers::get_index_of_type_from_pack_v<T, First, Rest...>;
-			new(buffer) T(std::forward<Args>(args)...);
+			type = helpers::get_index_of_type_from_pack_v<T, First, Rest...>;			
+			try
+			{
+				new(buffer) T(std::forward<Args>(args)...);
+			}
+			catch(...) //The constructor throwed an error
+			{
+				set_invalid_state();
+				throw; //Rethrow the error from the constructor
+			}
+		}
+
+		/// @brief Sets the variant to an invalid state			
+		inline void set_invalid_state() noexcept
+		{
+			type = sizeof...(Rest) + 1;
 		}
 
 		/*LINEAR-COMPLEXITY ALGORITHMS*/
