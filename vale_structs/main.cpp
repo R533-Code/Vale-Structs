@@ -37,6 +37,15 @@ int main(int argc, char** argv)
 		else
 			std::cout << "Variant is invalid\n";
 	}
+	arr = 10;
+	try
+	{
+		std::cout << arr.get<float>() << '\n';		
+	}
+	catch (std::exception& e)
+	{
+		std::cout << e.what() << '\n';
+	}
 
 	vale::array<int, 10, ThreadSafe> arr1 = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 	PRINT(arr1);
