@@ -153,7 +153,7 @@ namespace vale
 			if (is_valid())
 			{
 				if constexpr (true) //TODO: implement logic to choose destruction algorithm
-					impl_destruct_active_linear();
+					impl_destruct_active_constant();
 				else
 					impl_destruct_active_linear<0, First, Rest...>();
 			}			
