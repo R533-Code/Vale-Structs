@@ -4,6 +4,22 @@
 
 namespace vale
 {
+	/// @brief Thrown if variant.get() is called on an inactive type
+	class bad_variant_access
+		: public std::exception
+	{
+	public:
+		const char* what() const noexcept override { return "The type was not active!"; }
+	};
+
+	/// @brief Thrown if the variant is << to an ostream if it's in an invalid state
+	class invalid_variant_access
+		: public std::exception
+	{
+	public:
+		const char* what() const noexcept override { return "The variant was in an invalid state!"; }
+	};
+
 	template<typename First, typename... Rest>
 	class variant
 	{
@@ -35,8 +51,7 @@ namespace vale
 		/// @brief Destroys the variant, destroying the active object
 		~variant()
 		{
-			//destruct_active_linear<0, First, Rest...>();
-			destruct_active_constant();
+			destruct_active();
 		}
 
 		template<typename T>
@@ -48,7 +63,7 @@ namespace vale
 		{
 			static_assert(!helpers::is_type_not_in_pack_v<T, First, Rest...>,
 				"Type isn't part of the template parameter pack of the variant!");
-			destruct_active_linear<0, First, Rest...>(); //destroy the active object
+			destruct_active();
 			construct<T>(object); //constructs the new object
 
 			return *this;
@@ -66,7 +81,7 @@ namespace vale
 			{
 				return *reinterpret_cast<T*>(buffer);
 			}
-			throw /*vale::bad_variant_access{}*/;
+			throw vale::bad_variant_access{};
 		}
 
 		template<typename T>
@@ -81,7 +96,7 @@ namespace vale
 			{
 				return *reinterpret_cast<const T*>(buffer);
 			}
-			throw /*vale::bad_variant_access{}*/;
+			throw vale::bad_variant_access{};
 		}
 
 		/// @brief Returns the index of the current active type
@@ -105,7 +120,9 @@ namespace vale
 			static const vale::array dt
 				= { &print_variant_ptr<First>,
 				&print_variant_ptr<Rest>... };
-			dt[type](os, buffer);
+			if (is_valid())
+				return dt[type](os, buffer); //We return void
+			throw vale::invalid_variant_access{};
 		}
 
 	private:
@@ -129,6 +146,19 @@ namespace vale
 			}
 		}
 
+		/// @brief Destruct the active object if the variant is valid.
+		/// Chooses the best algorithm for destroying.
+		inline void destruct_active()
+		{
+			if (is_valid())
+			{
+				if constexpr (true) //TODO: implement logic to choose destruction algorithm
+					impl_destruct_active_linear();
+				else
+					impl_destruct_active_linear<0, First, Rest...>();
+			}			
+		}
+
 		/// @brief Sets the variant to an invalid state			
 		inline void set_invalid_state() noexcept
 		{
@@ -142,32 +172,31 @@ namespace vale
 		/// O(n) implementation of destruct_active().
 		/// @tparam FirstT The first type
 		/// @tparam ...RestT The rest of the pack
-		void destruct_active_linear()
+		void impl_destruct_active_linear()
 		{
 			if (index_t == type)
 				reinterpret_cast<const FirstT*>(buffer)->~FirstT(); //Call destructor
 			else //We recurse, popping the First type from the pack, and incrementing the index
-				destruct_active_linear<index_t + 1, RestT...>();
 		}
 
 		template<size_t index_t>
 		/// @brief Overload of destruct_active for when there are no longer a type.
 		/// As we have checked for all the types in the pack, this means that
 		/// active type was not any of the types in the pack.
-		void destruct_active_linear() {}
+		void impl_destruct_active_linear() {}
 
 		/*CONSTANT-COMPLEXITY ALGORITHMS*/
 
 		/// @brief Destroys the active object in constant time.
 		/// This might be faster if there are no trivial types,
-		/// or a lot of non-trivial type.
-		inline void destruct_active_constant()
+		/// or a lot of non-trivial type. SHOULD NOT BE CALLED IF THE VARIANT IS INVALID
+		inline void impl_destruct_active_constant()
 		{
 			//We initialize an array of pointers to the destructor of each
 			//type. The index is the destructor to call.
 			static const vale::array dt
 				= { &destruct_active_constant_delete<First>,
-				&destruct_active_constant_delete<Rest>... };
+				&destruct_active_constant_delete<Rest>... };		
 			dt[type](buffer);
 		}
 
