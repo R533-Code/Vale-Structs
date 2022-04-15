@@ -31,8 +31,8 @@ jobs:
       # Build your program with the given configuration
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
 
-    #- name: Run
-      #run: cd build && ./ValeStructsTest
+    - name: Run
+      run: cd build && ./ValeStructsTest
 
     - name: Test
       working-directory: ${{github.workspace}}/build
