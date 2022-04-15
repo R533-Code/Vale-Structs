@@ -177,6 +177,7 @@ namespace vale
 			if (index_t == type)
 				reinterpret_cast<const FirstT*>(buffer)->~FirstT(); //Call destructor
 			else //We recurse, popping the First type from the pack, and incrementing the index
+				impl_destruct_active_linear<index_t + 1, RestT...>();
 		}
 
 		template<size_t index_t>
