@@ -20,6 +20,11 @@ namespace vale
 		const char* what() const noexcept override { return "The variant was in an invalid state!"; }
 	};
 
+	enum class algorithm
+	{
+		linear_complexity, constant_complexity
+	};
+
 	template<typename First, typename... Rest>
 	class variant
 	{
@@ -107,6 +112,22 @@ namespace vale
 		/// @return The number of types in the variant parameter pack
 		constexpr uint64_t max_index() const noexcept { return sizeof...(Rest); }
 
+		/// @brief Check if the variant can be in an invalid state
+		/// TODO: fix if all constructor are noexcept
+		constexpr bool can_be_invalid() const noexcept { return sizeof...(Rest) + 1 != helpers::count_fundamental_v<First, Rest...>; }
+
+		/// @brief Check the complexity of the algorithm used for destructing active object
+		/// This is the algorithm that decides if the destruction algorithm has a complexity of O(1) or O(n).
+		constexpr algorithm destructor_complexity() const noexcept
+		{
+			// if more than 9/10 of the types are not fundamental, use the constant time destruction algortihm
+			if constexpr (static_cast<float>(helpers::count_non_fundamental_v<First, Rest...>) 
+					> static_cast<float>(sizeof...(Rest) + 1) * 9 / 10)
+				return algorithm::constant_complexity;
+			else
+				return algorithm::linear_complexity;
+		}
+
 		/// @brief Checks if the variant is in a valid state
 		/// @return true if the variant is valid, or false
 		bool is_valid() const noexcept { return type == sizeof...(Rest) + 1;}
@@ -120,19 +141,26 @@ namespace vale
 			static const vale::array dt
 				= { &print_variant_ptr<First>,
 				&print_variant_ptr<Rest>... };
-			if (is_valid())
-				return dt[type](os, buffer); //We return void
-			throw vale::invalid_variant_access{};
+			
+			if constexpr (can_be_invalid())
+			{
+				if (is_valid())
+					return dt[type](os, buffer); //We return void
+				throw vale::invalid_variant_access{};
+			}
+			else //As the variant cannot be invalid, we can safely call the function
+				return dt[type](os, buffer);
 		}
 
 	private:
 
 		template<typename T, typename... Args>
 		/// @brief Constructs an object of type 'T' in the buffer
+		/// Is noexcept if the variant cannot be invalid.
 		/// @tparam ...Args The parameter pack to forward to the constructor
 		/// @tparam T The type to construct
 		/// @param ...args The arguments to forward to the constructor
-		void construct(Args&&... args)
+		void construct(Args&&... args) noexcept(!can_be_invalid())
 		{
 			type = helpers::get_index_of_type_from_pack_v<T, First, Rest...>;			
 			try
@@ -150,13 +178,26 @@ namespace vale
 		/// Chooses the best algorithm for destroying.
 		inline void destruct_active()
 		{
-			if (is_valid())
+			//we only want to check if the variant is valid if it can be invalid
+			if constexpr (can_be_invalid())
 			{
-				if constexpr (true) //TODO: implement logic to choose destruction algorithm
-					impl_destruct_active_constant();
+				if (is_valid())
+				{
+					if constexpr (destructor_complexity() == algorithm::constant_complexity)
+						impl_destruct_active_constant();					
+					else
+						impl_destruct_active_linear<0, First, Rest...>();
+				}
+				//There is no need to do anything if the variant is not valid
+			}
+			else
+			{
+				// if more than 9/10 of the types are not fundamental, use the constant time destruction algortihm
+				if constexpr (destructor_complexity() == algorithm::constant_complexity)
+					impl_destruct_active_constant();					
 				else
 					impl_destruct_active_linear<0, First, Rest...>();
-			}			
+			}
 		}
 
 		/// @brief Sets the variant to an invalid state			
