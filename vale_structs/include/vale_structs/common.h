@@ -147,7 +147,7 @@ namespace vale
 		{
 			static constexpr uint64_t value = std::is_fundamental_v<First>
 				+ (std::is_fundamental_v<Rest> + ...);
-		}
+		};
 
 		template<typename First, typename... Rest>
 		/// @brief helper type to count the number of fundamental types in a pack
@@ -163,7 +163,7 @@ namespace vale
 		{
 			static constexpr uint64_t value = !std::is_fundamental_v<First>
 				+ (!std::is_fundamental_v<Rest> + ...);
-		}
+		};
 
 		template<typename First, typename... Rest>
 		/// @brief helper type to count the number of fundamental types in a pack
