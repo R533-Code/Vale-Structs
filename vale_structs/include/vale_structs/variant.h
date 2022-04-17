@@ -118,7 +118,7 @@ namespace vale
 
 		/// @brief Check the complexity of the algorithm used for destructing active object
 		/// This is the algorithm that decides if the destruction algorithm has a complexity of O(1) or O(n).
-		static constexpr algorithm destructor_complexity() rnoexcept
+		static constexpr algorithm destructor_complexity() noexcept
 		{
 			// if more than 9/10 of the types are not fundamental, use the constant time destruction algortihm
 			if constexpr (static_cast<float>(helpers::count_non_fundamental_v<First, Rest...>) 
