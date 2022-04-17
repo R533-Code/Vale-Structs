@@ -23,12 +23,12 @@ struct helper
 
 int main(int argc, char** argv)
 {
-	vale::variant<int, float, helper> arr(1.01f);
+	vale::variant<int, float> arr(1.01f);
 	std::cout << std::boolalpha << arr.can_be_invalid() << '\n';
 	std::cout << (arr.destructor_complexity() == vale::algorithm::linear_complexity ? "linear_complexity" : "constant_complexity") << '\n';
 	try
 	{
-		arr = helper{};
+		arr = 10;
 	}
 	catch(...)
 	{
