@@ -72,8 +72,7 @@ namespace vale
 		struct recurse_type_pack<true, conditions...>
 		{
 			static constexpr uint64_t value = 0;
-		};
-
+		};		
 	}
 
 	namespace helpers
@@ -139,6 +138,38 @@ namespace vale
 		/// @brief helper type to help determine if a type is [Non]ThreadSafe
 		/// @tparam T The type to check for
 		static constexpr bool is_thread_safety_policy_v = is_thread_safety_policy<T>::value;
+
+		template<typename First, typename... Rest>
+		/// @brief helper type to count the number of fundamental types in a pack
+		/// @tparam First The first type
+		/// @tparam ...Rest The rest of the parameter pack
+		struct count_fundamental
+		{
+			static constexpr uint64_t value = std::is_fundamental_v<First>
+				+ (std::is_fundamental_v<Rest> + ...);
+		}
+
+		template<typename First, typename... Rest>
+		/// @brief helper type to count the number of fundamental types in a pack
+		/// @tparam First The first type
+		/// @tparam ...Rest The rest of the parameter pack
+		static constexpr uint64_t count_fundamental_v = count_fundamental<First, Rest...>::value;
+
+		template<typename First, typename... Rest>
+		/// @brief helper type to count the number of fundamental types in a pack
+		/// @tparam First The first type
+		/// @tparam ...Rest The rest of the parameter pack
+		struct count_non_fundamental
+		{
+			static constexpr uint64_t value = !std::is_fundamental_v<First>
+				+ (!std::is_fundamental_v<Rest> + ...);
+		}
+
+		template<typename First, typename... Rest>
+		/// @brief helper type to count the number of fundamental types in a pack
+		/// @tparam First The first type
+		/// @tparam ...Rest The rest of the parameter pack
+		static constexpr uint64_t count_non_fundamental_v = count_non_fundamental<First, Rest...>::value;
 
 		template <typename First, typename... Rest>
 		/// @brief Checks if a parameter pack is formed by the same type
