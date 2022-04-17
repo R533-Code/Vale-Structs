@@ -114,11 +114,11 @@ namespace vale
 
 		/// @brief Check if the variant can be in an invalid state
 		/// TODO: fix if all constructor are noexcept
-		constexpr bool can_be_invalid() const noexcept { return sizeof...(Rest) + 1 != helpers::count_fundamental_v<First, Rest...>; }
+		static constexpr bool can_be_invalid() const noexcept { return sizeof...(Rest) + 1 != helpers::count_fundamental_v<First, Rest...>; }
 
 		/// @brief Check the complexity of the algorithm used for destructing active object
 		/// This is the algorithm that decides if the destruction algorithm has a complexity of O(1) or O(n).
-		constexpr algorithm destructor_complexity() const noexcept
+		static constexpr algorithm destructor_complexity() const noexcept
 		{
 			// if more than 9/10 of the types are not fundamental, use the constant time destruction algortihm
 			if constexpr (static_cast<float>(helpers::count_non_fundamental_v<First, Rest...>) 
