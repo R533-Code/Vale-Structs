@@ -21,13 +21,22 @@ namespace vale
 	};
 
 	template<typename DestructionPolicy, typename ThreadSafety, typename First, typename... Rest>
+	/// @brief Unspecialized variant_impl, if the ThreadSafety is not a valid type
+	/// @tparam DestructionPolicy The variant's destruction complexity policy
+	/// @tparam ThreadSafety The thread safety policy of the variant
 	class variant_impl
+	{
+		static_assert(helpers::is_thread_safety_policy_v<ThreadSafety>,
+			"ThreadSafety can only be [Non]ThreadSafe");
+	};
+
+	template<typename DestructionPolicy, typename First, typename... Rest>
+	/// @brief Non-thread safe variant overload
+	/// @tparam DestructionPolicy The variant's destruction complexity policy
+	class variant_impl<DestructionPolicy, NonThreadSafe, First, Rest...>
 	{
 		static_assert(helpers::is_variant_destructor_policy_v<DestructionPolicy>,
 			"DestructionPolicy can only be [Auto|Linear|Constant]ComplexityDestruct");
-
-		static_assert(helpers::is_thread_safety_policy_v<ThreadSafety>,
-			"ThreadSafety can only be [Non]ThreadSafe");
 
 		static_assert(helpers::is_pack_with_no_duplicates_v<First, Rest...>,
 			"Parameter pack should contain no duplicates!");
@@ -333,6 +342,12 @@ namespace vale
 		}
 	};
 
+	template<typename DestructionPolicy, typename First, typename... Rest>
+	class variant_impl<DestructionPolicy, ThreadSafe, First, Rest...>
+	{
+
+	};
+
 	template<typename First, typename... Rest>
 	/// @brief writes the content of the active object in the variant to 'os'
 	static std::ostream& operator<<(std::ostream& os, const variant_impl<First, Rest...>& var)
@@ -342,6 +357,10 @@ namespace vale
 	}
 
 	template<typename First, typename... Rest>
-	/// @brief Typedef for variant, whose destructor policy's complexity is automatically chosen	
-	using variant = variant_impl<AutoComplexityDestruct, First, Rest...>;
+	/// @brief Typedef for variant, whose destructor's complexity is automatically chosen
+	using variant = variant_impl<AutoComplexityDestruct, NonThreadSafe, First, Rest...>;
+
+	template<typename First, typename... Rest>
+	/// @brief Typedef for variant, whose destructor's complexity is automatically chosen
+	using ts_variant = variant_impl<AutoComplexityDestruct, ThreadSafe, First, Rest...>;
 }
