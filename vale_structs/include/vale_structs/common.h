@@ -259,6 +259,12 @@ namespace vale
 		static constexpr bool is_pack_with_no_duplicates_v = is_pack_with_no_duplicates<First, Rest...>::value;
 	}
 
+	/// @brief Enum representing an algorithm complexity
+	enum class algorithm
+	{
+		linear_complexity, constant_complexity
+	};
+
 	template<typename T>
 	/// @brief An iterator for object that are contiguous in memory
 	/// @tparam T The type of to which the iterator points
