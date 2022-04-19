@@ -27,10 +27,10 @@ namespace vale
 			"DestructionPolicy can only be [Auto|Linear|Constant]ComplexityDestruct");
 
 		static_assert(helpers::is_thread_safety_policy_v<ThreadSafety>,
-			"ThreadSafety can only be [Non]ThreadSafe")
+			"ThreadSafety can only be [Non]ThreadSafe");
 
-			static_assert(helpers::is_pack_with_no_duplicates_v<First, Rest...>,
-				"Parameter pack should contain no duplicates!");
+		static_assert(helpers::is_pack_with_no_duplicates_v<First, Rest...>,
+			"Parameter pack should contain no duplicates!");
 
 		//We align a stack buffer of size the greatest size of all types passed as parameters.
 		//This is to avoid any UB relating to alignment.
