@@ -238,7 +238,7 @@ namespace vale
 		/// @brief Helper to get the return type of a callable
 		/// @tparam Callable The functor
 		using return_type_of_callable_t =
-			typename decltype(std::function{ Callable })::result_type;
+			typename decltype(std::function{ std::declval<Callable>() })::result_type
 
 		/******************************************
 		INDEX OPERATIONS FOR PACKS
