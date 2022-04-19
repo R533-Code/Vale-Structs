@@ -442,7 +442,7 @@ namespace vale
 		/// @brief Copies the active object of a variant.
 		/// This method is deleted if not all type are copy constructible.
 		/// @param from The pointer from which to copy the object		
-		void impl_copy_variant_content(const void* from) noexcept(is_noexcept_copyable())
+		void impl_copy_variant_content(const void* from) noexcept(std::conjunction_v<std::is_nothrow_copy_constructible<First>, std::is_nothrow_copy_constructible<Rest>...>)
 		{
 			static const vale::array dt
 				= { &copy_construct_ptr<First>,
@@ -456,7 +456,7 @@ namespace vale
 		/// @tparam T The type whose copy constructor should be called
 		/// @param from Pointer to the object to pass to the copy constructor
 		/// @param to Where to construct the object
-		static void copy_construct_ptr(const void* from, void* to) noexcept(is_noexcept_copyable())
+		static void copy_construct_ptr(const void* from, void* to) noexcept(std::conjunction_v<std::is_nothrow_copy_constructible<First>, std::is_nothrow_copy_constructible<Rest>...>)
 		{
 			new(to) T(*reinterpret_cast<const T*>(from));
 		}
