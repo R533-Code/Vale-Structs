@@ -415,7 +415,7 @@ namespace vale
 		{
 			//We initialize an array of pointers to the destructor of each
 			//type. The index is the destructor to call.
-			static const std::function<decltype(copy_construct_ptr<First>)> dt[sizeof...(Rest) + 1]
+			static constexpr vale::array dt
 				= { &destruct_active_delete_ptr<First>,
 				&destruct_active_delete_ptr<Rest>... };
 			dt[type](buffer);
@@ -455,7 +455,7 @@ namespace vale
 		/// @param from The pointer from which to copy the object		
 		void impl_copy_variant_content(const void* from) noexcept(is_noexcept_copyable())
 		{
-			static const std::function<decltype(copy_construct_ptr<First>)> dt[sizeof...(Rest) + 1]
+			static constexpr vale::array dt
 				= { &copy_construct_ptr<First>,
 				&copy_construct_ptr<Rest>... };
 
@@ -477,7 +477,7 @@ namespace vale
 		/// @param from The pointer from which to copy the object
 		void impl_move_variant_content(void* from) noexcept(is_noexcept_movable())
 		{
-			static const std::function<decltype(copy_construct_ptr<First>)> dt[sizeof...(Rest) + 1]
+			static constexpr vale::array dt
 				= { &move_construct_ptr<First>,
 				&move_construct_ptr<Rest>... };
 
