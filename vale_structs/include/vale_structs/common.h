@@ -198,8 +198,8 @@ namespace vale
 		/// @tparam ...Rest The rest of the parameter pack
 		struct is_parameter_pack_of_same_type
 		{
-			static_assert(std::conjunction_v<std::is_same<First, Rest>...>);
-			using type = First;
+			using type =
+				typename std::enable_if_t<std::conjunction_v<std::is_same<First, Rest>...>, First>;
 		};
 
 		/******************************************
