@@ -47,15 +47,15 @@ int main(int argc, char** argv)
 	{
 		std::cout << arr.get<float>() << '\n';		
 	}
-	catch (std::exception& e)
+	catch (const std::exception& e)
 	{
 		std::cout << e.what() << '\n';
 	}
 
-	vale::array<int, 10, ThreadSafe> arr1 = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+	vale::ts_array<int, 10> arr1 = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 	PRINT(arr1);
 	std::random_device rd;
-	std::mt19937 g(rd());
+	std::mt19937 g{ rd() };
 	arr1.pass_iterators(std::shuffle<array_iterator<int>, std::mt19937&>, g);
 	std::shuffle(array_iterator<int>(arr1.buffer), array_iterator<int>(arr1.buffer + arr1.size()), g);
 	PRINT(arr1);
