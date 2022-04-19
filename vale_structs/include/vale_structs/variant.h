@@ -354,15 +354,15 @@ namespace vale
 			//We initialize an array of pointers to the destructor of each
 			//type. The index is the destructor to call.
 			static const vale::array dt
-				= { &destruct_active_constant_delete<First>,
-				&destruct_active_constant_delete<Rest>... };
+				= { &destruct_active_delete_ptr<First>,
+				&destruct_active_delete_ptr<Rest>... };
 			dt[type](buffer);
 		}
 
 		template<typename T>
 		/// @brief Helper static method that calls the destructor of an object
 		/// @tparam T The type to cast to, to call its destructor
-		static void destruct_active_constant_delete(void* buffer) noexcept(is_noexcept_destructible())
+		static void destruct_active_delete_ptr(void* buffer) noexcept(is_noexcept_destructible())
 		{
 			reinterpret_cast<const T*>(buffer)->~T();
 		}
