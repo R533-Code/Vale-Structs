@@ -28,7 +28,7 @@ auto func()
 
 int main(int argc, char** argv)
 {	
-	vale::variant<int, float, std::string> arr1(func());
+	vale::variant<int, float, std::string> arr1(std::move(func()));
 	std::cout << std::boolalpha;
 	PRINT(decltype(arr1)::alignment());
 	PRINT(decltype(arr1)::buffer_byte_size());
