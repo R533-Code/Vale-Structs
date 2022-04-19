@@ -217,9 +217,17 @@ namespace vale
 		/// @tparam ...Args The parameter pack to forward to the constructor
 		/// @tparam T The type to construct
 		/// @param ...args The arguments to forward to the constructor
-		void construct(Args&&... args) noexcept(!can_be_invalid())
+		void construct(Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
 		{
 			type = helpers::get_index_of_type_from_pack_v<T, First, Rest...>;			
+			
+			//If the constructor can't throw, do not check try/catch exceptions
+			if constexpr (std::is_nothrow_constructible_v<T, Args...>)
+			{
+				new(buffer) T(std::forward<Args>(args)...);
+			}
+			else
+			{
 			try
 			{
 				new(buffer) T(std::forward<Args>(args)...);
