@@ -463,8 +463,8 @@ namespace vale
 
 		/// @brief Copies the active object of a variant.
 		/// This method is deleted if not all type are copy constructible.
-		/// @param from The pointer from which to copy the object		
-		void impl_move_variant_content(void* from) noexcept(is_noexcept_movable())
+		/// @param from The pointer from which to copy the object
+		void impl_move_variant_content(void* from) noexcept(std::conjunction_v<std::is_nothrow_move_constructible<First>, std::is_nothrow_move_constructible<Rest>...>)
 		{
 			static const vale::array dt
 				= { &move_construct_ptr<First>,
@@ -478,7 +478,7 @@ namespace vale
 		/// @tparam T The type whose copy constructor should be called
 		/// @param from Pointer to the object to pass to the copy constructor
 		/// @param to Where to construct the object
-		static void move_construct_ptr(void* from, void* to) noexcept(is_noexcept_movable())
+		static void move_construct_ptr(void* from, void* to) noexcept(std::conjunction_v<std::is_nothrow_move_constructible<First>, std::is_nothrow_move_constructible<Rest>...>)
 		{
 			new(to) T(std::move(*reinterpret_cast<T*>(from)));
 		}
@@ -486,7 +486,14 @@ namespace vale
 
 	template<typename DestructionPolicy, typename First, typename... Rest>
 	class variant_impl<DestructionPolicy, ThreadSafe, First, Rest...>
+		: private variant_impl<DestructionPolicy, NonThreadSafe, First, Rest...>
 	{
+		// static asserts are done by the variant inherited
+
+		/// @brief The mutex which protects the data
+		mutable std::mutex mutex;
+
+	public:
 
 	};
 
