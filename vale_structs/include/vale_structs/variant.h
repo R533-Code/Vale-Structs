@@ -43,7 +43,7 @@ namespace vale
 
 		//We align a stack buffer of size the greatest size of all types passed as parameters.
 		//This is to avoid any UB relating to alignment.
-		alignas(helpers::get_max_size_of_type_pack_v<First, Rest...>)
+		alignas(alignof(helpers::get_type_of_max_size_t<First, Rest...>))
 			/// @brief The stack storage on which the active object lives
 			char buffer[helpers::get_max_size_of_type_pack_v<First, Rest...>];
 
