@@ -79,14 +79,34 @@ namespace vale
 		struct recurse_type_pack<true, conditions...>
 		{
 			static constexpr uint64_t value = 0;
-		};		
+		};
+
+		template<bool condition, bool... conditions>
+		static constexpr uint64_t recurse_type_pack_v = recurse_type_pack<condition, conditions...>::value;
+
+		template<size_t size, typename First, typename... Rest>
+		struct search_for_type_of_size_in_pack
+		{
+			using type =
+				typename std::conditional_t<size == sizeof(First), First, typename search_for_type_of_size_in_pack<size, Rest...>::type>;
+		};
+
+		template<size_t size, typename First>
+		struct search_for_type_of_size_in_pack<size, First>
+		{
+			using type =
+				typename std::conditional_t<size == sizeof(First), First, void>;
+		};
+
+		template<size_t size, typename First, typename... Rest>
+		using search_for_type_of_size_in_pack_t = typename search_for_type_of_size_in_pack<size, First, Rest...>::type;
 	}
 
 	namespace helpers
 	{
 		/******************************************
 		MAX/MIN SIZE OF TYPE IN PACK
-		******************************************/
+		******************************************/		
 
 		template<typename First, typename... Rest>
 		/// @brief Helper type to access the maximum sizeof all types passed as template arguments
@@ -131,6 +151,18 @@ namespace vale
 		/// @tparam First The first type
 		/// @tparam ...Rest Parameter pack
 		static constexpr uint64_t get_min_size_of_type_pack_v = get_min_size_of_type_pack<First, Rest...>::size;
+
+		template<typename First, typename... Rest>
+		struct get_type_of_max_size
+		{
+			using type =
+				typename details::search_for_type_of_size_in_pack_t<get_max_size_of_type_pack_v<First, Rest...>, First, Rest...>;
+			static constexpr uint64_t value = get_index_of_type_from_pack_v<type, First, Rest...>;
+		};
+
+		template<typename First, typename... Rest>
+		using get_type_of_max_size_t = 
+			typename get_type_of_max_size<First, Rest...>::type;
 
 		/******************************************
 		THREAD SAFETY POLICY
