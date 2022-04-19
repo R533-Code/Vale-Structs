@@ -368,7 +368,8 @@ namespace vale
 		}
 
 		template<typename T>
-		/// @brief Helper static method that converts the buffer to the appropriate type and << in 'os'
+		/// @brief Helper static method that converts the buffer to the appropriate type and << in 'os'.
+		/// This method is will cause a compilation error if not all type can be << to an ostream.
 		/// @tparam T The type to which to cast 'buffer'
 		/// @param os The ostream in which to << the casted result
 		/// @param buffer The buffer to cast
