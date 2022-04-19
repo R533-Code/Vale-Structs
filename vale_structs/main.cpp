@@ -7,7 +7,6 @@
 
 #include <vale_structs/array.h>
 #include <vale_structs/variant.h>
-#include <variant>
 
 using namespace vale;
 
