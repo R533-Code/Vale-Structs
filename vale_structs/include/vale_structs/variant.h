@@ -1,6 +1,7 @@
 #pragma once
 #include <vale_structs/common.h>
 #include <vale_structs/array.h>
+#include <array>
 
 namespace vale
 {
@@ -414,7 +415,7 @@ namespace vale
 		{
 			//We initialize an array of pointers to the destructor of each
 			//type. The index is the destructor to call.
-			static const vale::array dt
+			static constexpr std::array dt
 				= { &destruct_active_delete_ptr<First>,
 				&destruct_active_delete_ptr<Rest>... };
 			dt[type](buffer);
@@ -442,9 +443,9 @@ namespace vale
 		/// @brief Copies the active object of a variant.
 		/// This method is deleted if not all type are copy constructible.
 		/// @param from The pointer from which to copy the object		
-		void impl_copy_variant_content(const void* from) noexcept(std::conjunction_v<std::is_nothrow_copy_constructible<First>, std::is_nothrow_copy_constructible<Rest>...>)
+		void impl_copy_variant_content(const void* from) noexcept(is_noexcept_copyable())
 		{
-			static const vale::array dt
+			static constexpr std::array dt
 				= { &copy_construct_ptr<First>,
 				&copy_construct_ptr<Rest>... };
 
@@ -464,9 +465,9 @@ namespace vale
 		/// @brief Copies the active object of a variant.
 		/// This method is deleted if not all type are copy constructible.
 		/// @param from The pointer from which to copy the object
-		void impl_move_variant_content(void* from) noexcept(std::conjunction_v<std::is_nothrow_move_constructible<First>, std::is_nothrow_move_constructible<Rest>...>)
+		void impl_move_variant_content(void* from) noexcept(is_noexcept_movable())
 		{
-			static const vale::array dt
+			static constexpr std::array dt
 				= { &move_construct_ptr<First>,
 				&move_construct_ptr<Rest>... };
 
@@ -478,7 +479,7 @@ namespace vale
 		/// @tparam T The type whose copy constructor should be called
 		/// @param from Pointer to the object to pass to the copy constructor
 		/// @param to Where to construct the object
-		static void move_construct_ptr(void* from, void* to) noexcept(std::conjunction_v<std::is_nothrow_move_constructible<First>, std::is_nothrow_move_constructible<Rest>...>)
+		static void move_construct_ptr(void* from, void* to) noexcept(is_noexcept_movable())
 		{
 			new(to) T(std::move(*reinterpret_cast<T*>(from)));
 		}
