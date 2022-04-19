@@ -18,13 +18,19 @@ namespace vale
 	{
 	public:
 		const char* what() const noexcept override { return "The variant was in an invalid state!"; }
-	};	
+	};
 
-	template<typename First, typename... Rest>
-	class variant
+	template<typename DestructionPolicy, typename ThreadSafety, typename First, typename... Rest>
+	class variant_impl
 	{
-		static_assert(helpers::is_pack_with_no_duplicates_v<First, Rest...>,
-			"Parameter pack should contain no duplicates!");
+		static_assert(helpers::is_variant_destructor_policy_v<DestructionPolicy>,
+			"DestructionPolicy can only be [Auto|Linear|Constant]ComplexityDestruct");
+
+		static_assert(helpers::is_thread_safety_policy_v<ThreadSafety>,
+			"ThreadSafety can only be [Non]ThreadSafe")
+
+			static_assert(helpers::is_pack_with_no_duplicates_v<First, Rest...>,
+				"Parameter pack should contain no duplicates!");
 
 		//We align a stack buffer of size the greatest size of all types passed as parameters.
 		//This is to avoid any UB relating to alignment.
@@ -60,16 +66,22 @@ namespace vale
 		/// This is the algorithm that decides if the destruction algorithm has a complexity of O(1) or O(n).
 		static constexpr algorithm destructor_complexity() noexcept
 		{
-			// if more than 9/10 of the types are not fundamental, use the constant time destruction algorithm
-			// As we are using integer division, if there are less than 10 types
-			if constexpr (helpers::count_non_fundamental_v<First, Rest...>
-					> ((sizeof...(Rest) + 1) * 9) / 10)
+			//If AutoComplexityDestruct, use algorithm to choose complexity
+			if constexpr (std::is_same_v<DestructionPolicy, AutoComplexityDestruct>)
 			{
-				return algorithm::constant_complexity;
+				// if more than 9/10 of the types are not fundamental, use the constant time destruction algorithm
+				// As we are using integer division, if there are less than 10 types
+				if constexpr (helpers::count_non_fundamental_v<First, Rest...> > ((sizeof...(Rest) + 1) * 9) / 10)
+					return algorithm::constant_complexity;
+				else
+					return algorithm::linear_complexity;
 			}
-			else
+			else //If not AutoComplexityDestruct, choose the according policy
 			{
-				return algorithm::linear_complexity;
+				if constexpr (std::is_same_v<DestructionPolicy, ConstantComplexityDestruct>)
+					return algorithm::constant_complexity;
+				else
+					return algorithm::linear_complexity;
 			}
 		}
 
@@ -85,7 +97,7 @@ namespace vale
 		******************************************/
 
 		/// @brief Default construct the first type 
-		variant() noexcept(std::is_nothrow_default_constructible_v<First>)
+		variant_impl() noexcept(std::is_nothrow_default_constructible_v<First>)
 		{
 			construct<First>(); //Default construct the first type
 		}
@@ -94,7 +106,7 @@ namespace vale
 		/// @brief Creates a variant storing an object of type 'T'
 		/// @tparam T The type of the active object
 		/// @param object The value of the new object to store
-		variant(const T& object) noexcept(std::is_nothrow_copy_constructible_v<T>)
+		variant_impl(const T& object) noexcept(std::is_nothrow_copy_constructible_v<T>)
 		{
 			//The type should be part of the parameter pack of the variant
 			static_assert(!helpers::is_type_not_in_pack_v<T, First, Rest...>,
@@ -103,7 +115,7 @@ namespace vale
 		}
 
 		/// @brief Destroys the variant, destroying the active object
-		~variant() noexcept(is_noexcept_destructible())
+		~variant_impl() noexcept(is_noexcept_destructible())
 		{
 			destruct_active();
 		}
@@ -113,7 +125,7 @@ namespace vale
 		/// @tparam T The type of the new object to store
 		/// @param object The new object to store
 		/// @return *this
-		variant& operator=(const T& object)
+		variant_impl& operator=(const T& object)
 		{
 			static_assert(!helpers::is_type_not_in_pack_v<T, First, Rest...>,
 				"Type isn't part of the template parameter pack of the variant!");
@@ -127,7 +139,7 @@ namespace vale
 		/// @brief Gets the value of the object of type T if its active, else throws
 		/// @tparam T The type of the object to get
 		/// @return Reference to the object, or throws a bad_variant_access
-		T& get()
+		[[nodiscard]] T& get()
 		{
 			static_assert(!helpers::is_type_not_in_pack_v<T, First, Rest...>,
 				"Type isn't part of the template parameter pack of the variant!");
@@ -142,7 +154,7 @@ namespace vale
 		/// @brief Gets the value of the object of type T if its active, else throws
 		/// @tparam T The type of the object to get
 		/// @return const reference to the object, or throws a bad_variant_access
-		const T& get() const
+		[[nodiscard]] const T& get() const
 		{
 			static_assert(!helpers::is_type_not_in_pack_v<T, First, Rest...>,
 				"Type isn't part of the template parameter pack of the variant!");
@@ -155,11 +167,11 @@ namespace vale
 
 		/// @brief Returns the index of the current active type
 		/// @return The active index, or max_index() + 1 to signify invalid state
-		uint64_t index() const noexcept { return type; }		
+		[[nodiscard]] uint64_t index() const noexcept { return type; }
 
 		/// @brief Checks if the variant is in a valid state
 		/// @return true if the variant is valid, or false
-		bool is_valid() const noexcept { return type != sizeof...(Rest) + 1; }
+		[[nodiscard]] bool is_valid() const noexcept { return type != sizeof...(Rest) + 1; }
 
 		/// @brief Helper method to print a variant's active content
 		/// @param os The ostream in which to << the content
@@ -170,7 +182,7 @@ namespace vale
 			static const vale::array dt
 				= { &print_variant_ptr<First>,
 				&print_variant_ptr<Rest>... };
-			
+
 			if constexpr (can_be_invalid())
 			{
 				if (is_valid())
@@ -190,7 +202,7 @@ namespace vale
 				"Type isn't part of the template parameter pack of the variant!");
 			destruct_active();
 			construct<T>(std::forward<Args>(args)...);
-		}		
+		}
 
 	private:
 
@@ -203,7 +215,7 @@ namespace vale
 		void construct(Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
 		{
 			type = helpers::get_index_of_type_from_pack_v<T, First, Rest...>;
-			
+
 			//If the constructor can't throw, do not check try/catch exceptions
 			if constexpr (std::is_nothrow_constructible_v<T, Args...>)
 			{
@@ -215,7 +227,7 @@ namespace vale
 				{
 					new(buffer) T(std::forward<Args>(args)...);
 				}
-				catch(...) //The constructor throwed an error
+				catch (...) //The constructor throwed an error
 				{
 					set_invalid_state();
 					throw; //Rethrow the error from the constructor
@@ -239,7 +251,7 @@ namespace vale
 					if (is_valid())
 					{
 						if constexpr (destructor_complexity() == algorithm::constant_complexity)
-							impl_destruct_active_constant();					
+							impl_destruct_active_constant();
 						else
 							impl_destruct_active_linear<0, First, Rest...>();
 					}
@@ -249,7 +261,7 @@ namespace vale
 				{
 					// if more than 9/10 of the types are not fundamental, use the constant time destruction algortihm
 					if constexpr (destructor_complexity() == algorithm::constant_complexity)
-						impl_destruct_active_constant();					
+						impl_destruct_active_constant();
 					else
 						impl_destruct_active_linear<0, First, Rest...>();
 				}
@@ -298,7 +310,7 @@ namespace vale
 			//type. The index is the destructor to call.
 			static const vale::array dt
 				= { &destruct_active_constant_delete<First>,
-				&destruct_active_constant_delete<Rest>... };		
+				&destruct_active_constant_delete<Rest>... };
 			dt[type](buffer);
 		}
 
@@ -308,7 +320,7 @@ namespace vale
 		static void destruct_active_constant_delete(void* buffer) noexcept(is_noexcept_destructible())
 		{
 			reinterpret_cast<const T*>(buffer)->~T();
-		}		
+		}
 
 		template<typename T>
 		/// @brief Helper static method that converts the buffer to the appropriate type and << in 'os'
@@ -323,9 +335,13 @@ namespace vale
 
 	template<typename First, typename... Rest>
 	/// @brief writes the content of the active object in the variant to 'os'
-	static std::ostream& operator<<(std::ostream& os, const variant<First, Rest...>& var)
+	static std::ostream& operator<<(std::ostream& os, const variant_impl<First, Rest...>& var)
 	{
 		var.print(os);
 		return os;
 	}
+
+	template<typename First, typename... Rest>
+	/// @brief Typedef for variant, whose destructor policy's complexity is automatically chosen	
+	using variant = variant_impl<AutoComplexityDestruct, First, Rest...>;
 }
