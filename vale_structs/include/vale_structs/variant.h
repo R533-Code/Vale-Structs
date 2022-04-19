@@ -41,6 +41,13 @@ namespace vale
 		uint16_t type = 0;
 
 	public:
+
+		/// @brief Default construct the first type 
+		variant() noexcept(std::is_nothrow_default_constructible_v<First>)
+		{
+			construct<First>(); //Default construct the first type
+		}
+
 		template<typename T>
 		/// @brief Creates a variant storing an object of type 'T'
 		/// @tparam T The type of the active object
