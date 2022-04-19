@@ -62,7 +62,7 @@ namespace vale
 
 		/// @brief Returns the index representing an invalid state
 		/// @return max_active_index() + 1
-		static constexpr uint64_t invalid_index() noexcept { return sizeof...(Rest) + 1; }
+		static constexpr size_t invalid_index() noexcept { return sizeof...(Rest) + 1; }
 
 		/// @brief Check if the variant can be in an invalid state
 		/// @return True if all the types are fundamental
@@ -70,6 +70,14 @@ namespace vale
 		{
 			return sizeof...(Rest) + 1 != helpers::count_fundamental_v<First, Rest...>;
 		}
+
+		/// @brief Returns the alignment of the type with the highest size
+		/// @return size_t representing the alignment
+		static constexpr size_t alignment() noexcept { return alignof(helpers::get_type_of_max_size_t<First, Rest...>); }
+
+		/// @brief 
+		/// @return 
+		static constexpr size_t buffer_byte_size() noexcept { return helpers::get_max_size_of_type_pack_v<First, Rest...>; }
 
 		/// @brief Check the complexity of the algorithm used for destructing active object
 		/// This is the algorithm that decides if the destruction algorithm has a complexity of O(1) or O(n).
