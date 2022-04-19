@@ -378,6 +378,10 @@ namespace vale
 	template <class First, class... Rest>
 	array(First, Rest...)->array<typename helpers::is_parameter_pack_of_same_type<First, Rest...>::type, 1 + sizeof...(Rest)>;
 
+	template<typename T, size_t size>
+	/// @brief Thread safe array typedef
+	using ts_array = array<T, size, ThreadSafe>;
+
 	template<typename T, size_t size, typename ThreadSafety>
 	/// @brief writes the content of the array between '{}', separating the objects by ','.
 	/// Will lock the mutex of the array if its thread safety policy is ThreadSafe.
