@@ -377,6 +377,50 @@ namespace vale
 		{
 			os << *reinterpret_cast<const T*>(buffer);
 		}
+
+		/// @brief Copies the active object of a variant.
+		/// This method is deleted if not all type are copy constructible.
+		/// @param from The pointer from which to copy the object		
+		void impl_copy_variant_content(const void* from) noexcept(is_noexcept_copyable())
+		{
+			static const vale::array dt
+				= { &copy_construct_ptr<First>,
+				&copy_construct_ptr<Rest>... };
+
+			dt[type](from, buffer);
+		}
+
+		template<typename T>
+		/// @brief Copy constructs in 'to' by casting 'from' to 'const T&'
+		/// @tparam T The type whose copy constructor should be called
+		/// @param from Pointer to the object to pass to the copy constructor
+		/// @param to Where to construct the object
+		static void copy_construct_ptr(const void* from, void* to) noexcept(is_noexcept_copyable())
+		{
+			new(to) T(*reinterpret_cast<const T*>(from));
+		}
+
+		/// @brief Copies the active object of a variant.
+		/// This method is deleted if not all type are copy constructible.
+		/// @param from The pointer from which to copy the object		
+		void impl_move_variant_content(void* from) noexcept(is_noexcept_movable())
+		{
+			static const vale::array dt
+				= { &move_construct_ptr<First>,
+				&move_construct_ptr<Rest>... };
+
+			dt[type](from, buffer);
+		}
+
+		template<typename T>
+		/// @brief Copy constructs in 'to' by casting 'from' to 'const T&'
+		/// @tparam T The type whose copy constructor should be called
+		/// @param from Pointer to the object to pass to the copy constructor
+		/// @param to Where to construct the object
+		static void move_construct_ptr(void* from, void* to) noexcept(is_noexcept_movable())
+		{
+			new(to) T(std::move(*reinterpret_cast<T*>(from)));
+		}
 	};
 
 	template<typename DestructionPolicy, typename First, typename... Rest>
