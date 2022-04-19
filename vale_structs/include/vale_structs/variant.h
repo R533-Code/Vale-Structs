@@ -70,7 +70,7 @@ namespace vale
 			if constexpr (std::is_same_v<DestructionPolicy, AutoComplexityDestruct>)
 			{
 				// if more than 9/10 of the types are not fundamental, use the constant time destruction algorithm
-				// As we are using integer division, if there are less than 10 types
+				// As we are using integer division, if there are less than 10 types, linear_complexity will be choosed
 				if constexpr (helpers::count_non_fundamental_v<First, Rest...> > ((sizeof...(Rest) + 1) * 9) / 10)
 					return algorithm::constant_complexity;
 				else
