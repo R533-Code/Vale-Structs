@@ -17,6 +17,13 @@ namespace vale
 	/// @brief Buffer policy which signifies to a struct to not use an optional buffer
 	struct NonOptionalBuffer {};
 
+	/// @brief Variant destructor policy, which signifies that the implementation should choose the complexity of the destructor
+	struct AutoComplexityDestruct {};
+	/// @brief Variant destructor policy, which signifies that the linear complexity destructor should be used
+	struct LinearComplexityDestruct {};
+	/// @brief Variant destructor policy, which signifies that the constant complexity destructor should be used
+	struct ConstantComplexityDestruct{};
+
 	/// @brief Contains meta-programing utilities
 	namespace details
 	{
@@ -77,6 +84,10 @@ namespace vale
 
 	namespace helpers
 	{
+		/******************************************
+		MAX/MIN SIZE OF TYPE IN PACK
+		******************************************/
+
 		template<typename First, typename... Rest>
 		/// @brief Helper type to access the maximum sizeof all types passed as template arguments
 		/// @tparam First The first type
@@ -121,6 +132,10 @@ namespace vale
 		/// @tparam ...Rest Parameter pack
 		static constexpr uint64_t get_min_size_of_type_pack_v = get_min_size_of_type_pack<First, Rest...>::size;
 
+		/******************************************
+		THREAD SAFETY POLICY
+		******************************************/
+
 		template<typename T>
 		/// @brief Helper struct to check if a type is [Non]ThreadSafe
 		/// @tparam T The type to check for
@@ -138,6 +153,36 @@ namespace vale
 		/// @brief helper type to help determine if a type is [Non]ThreadSafe
 		/// @tparam T The type to check for
 		static constexpr bool is_thread_safety_policy_v = is_thread_safety_policy<T>::value;
+
+		/******************************************
+		VARIANT DESTRUCTION POLICY
+		******************************************/
+
+		template<typename T>
+		/// @brief Helper struct to check if a type is a variant destructor policy
+		/// @tparam T The type to check for
+		struct is_variant_destructor_policy { static constexpr bool value = false; };
+
+		template<>
+		/// @brief Overload for AutoComplexityDestruct variant destructor policy
+		struct is_variant_destructor_policy<AutoComplexityDestruct> { static constexpr bool value = true; };
+
+		template<>
+		/// @brief Overload for LinearComplexityDestruct variant destructor policy
+		struct is_variant_destructor_policy<LinearComplexityDestruct> { static constexpr bool value = true; };
+
+		template<>
+		/// @brief Overload for ConstantComplexityDestruct variant destructor policy
+		struct is_variant_destructor_policy<ConstantComplexityDestruct> { static constexpr bool value = true; };
+
+		template<typename T>
+		/// @brief Helper type to check if a type is a variant destructor policy
+		/// @tparam T The type to check for
+		static constexpr bool is_variant_destructor_policy_v = is_variant_destructor_policy<T>::value;
+
+		/******************************************
+		COUNT OF [NON]FUNDAMENTAL IN PACK
+		******************************************/
 
 		template<typename First, typename... Rest>
 		/// @brief helper type to count the number of fundamental types in a pack
@@ -171,6 +216,10 @@ namespace vale
 		/// @tparam ...Rest The rest of the parameter pack
 		static constexpr uint64_t count_non_fundamental_v = count_non_fundamental<First, Rest...>::value;
 
+		/******************************************
+		SAME TYPE IN PACK
+		******************************************/
+
 		template <typename First, typename... Rest>
 		/// @brief Checks if a parameter pack is formed by the same type
 		/// @tparam First The first type
@@ -181,11 +230,19 @@ namespace vale
 			using type = First;
 		};
 
+		/******************************************
+		RETURN TYPE OF CALLABLE
+		******************************************/
+
 		template<typename Callable>
 		/// @brief Helper to get the return type of a callable
 		/// @tparam Callable The functor
-		using return_type_of_callable_t = //Takes advantages of std::function's CTAD
-			typename decltype(std::function{ std::declval<Callable>() })::result_type;
+		using return_type_of_callable_t =
+			typename decltype(std::function{ Callable })::result_type;
+
+		/******************************************
+		INDEX OPERATIONS FOR PACKS
+		******************************************/
 
 		template<size_t index, typename First, typename... Rest>
 		/// @brief Returns the type at index 'index' of a pack
@@ -205,6 +262,10 @@ namespace vale
 		using get_type_at_index_from_pack_t =
 			typename get_type_at_index_from_pack<index, First, Rest...>::type;
 
+		/******************************************
+		SEARCH FOR TYPE IN PACK
+		******************************************/
+
 		template<typename Type, typename First, typename... Rest>
 		/// @brief Returns the index of 'Type' in 'First' + 'Rest'
 		/// @tparam Type The type to search for		
@@ -218,6 +279,10 @@ namespace vale
 		/// @brief Returns the index of 'Type' in 'First' + 'Rest'
 		/// @tparam Type The type to search for	
 		static constexpr uint64_t get_index_of_type_from_pack_v = get_index_of_type_from_pack<Type, First, Rest...>::value;
+
+		/******************************************
+		CHECKS FOR IF TYPE IS [NOT] IN PACK
+		******************************************/
 
 		template<typename Type, typename First, typename... Rest>
 		/// @brief Checks if a 'Type' is not found in 'First' + 'Rest'
@@ -238,6 +303,10 @@ namespace vale
 
 		template<typename Type, typename First, typename... Rest>
 		static constexpr bool is_type_not_in_pack_v = is_type_not_in_pack<Type, First, Rest...>::value;
+
+		/******************************************
+		CHECK IF PACK CONTAINS DUPLICATES
+		******************************************/
 
 		template<typename First, typename... Rest>
 		/// @brief Check if a parameter pack does not contain any duplicate types
