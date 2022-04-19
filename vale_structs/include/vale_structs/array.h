@@ -139,7 +139,7 @@ namespace vale
 		/// @param index The index of the object
 		/// @param func function to which the object is passed
 		/// @return false if the index is out of range, true if the object was passed to the function
-		constexpr bool access_index(size_t index, void(*func)(T&)) noexcept(noexcept(func(std::declval<T>())))
+		constexpr bool access_index(size_t index, void(*func)(T&))
 		{
 			std::scoped_lock lock{ mutex };
 			if (index < nb_elem)
@@ -152,7 +152,7 @@ namespace vale
 
 		/// @brief Call a functor with each of the object in the array
 		/// @param func The functor to which a reference of each object is passed
-		constexpr void for_each(void(*func)(T&)) noexcept(noexcept(func(std::declval<T>())))
+		constexpr void for_each(void(*func)(T&))
 		{
 			std::scoped_lock lock{ mutex };
 			for (size_t i = 0; i < nb_elem; i++)
@@ -182,7 +182,7 @@ namespace vale
 		/// @param function The function to which to pass the iterators followed by the argument pack
 		/// @param ...args Argument pack forwarded to 'function' after iterators
 		/// @return What is returned by the 'function'
-		constexpr auto pass_iterators(Func function, Args&&... args) -> helpers::return_type_of_callable_t<Func>
+		constexpr auto pass_iterators(Func function, Args&&... args)
 		{
 			std::scoped_lock lock{ mutex };
 			return function(contiguous_iterator(buffer), contiguous_iterator(buffer + nb_elem), std::forward<Args>(args)...);
@@ -233,7 +233,7 @@ namespace vale
 		{
 			std::scoped_lock lock{ mutex };
 			os << "{";
-			for (size_t i = 0; i < nb_elem; i++)
+			for (size_t i = 0; i < nb_elem - 1; i++)
 				os << buffer[i] << ", ";
 			os << buffer[nb_elem - 1] << '}';
 		}
@@ -363,7 +363,7 @@ namespace vale
 		inline void print(std::ostream& os) const
 		{
 			os << "{";
-			for (size_t i = 0; i < nb_elem; i++)
+			for (size_t i = 0; i < nb_elem - 1; i++)
 				os << buffer[i] << ", ";
 			os << buffer[nb_elem - 1] << '}';
 		}
