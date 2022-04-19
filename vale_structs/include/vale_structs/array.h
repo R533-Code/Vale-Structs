@@ -1,3 +1,25 @@
+/** @file array.h
+* @brief Header that contains the array class.
+* An array is a contiguous region representing a collection of stack-allocated elements.
+* It has a fixed size.
+* This class is overloaded for ThreadSafe, and NonThreadSafe thread safety policy.
+*
+* A thread safe array 'ts_array' does not provide an iterator interface, which would be prone
+* to race conditions, but rather provides helpful methods to manipulate the array's internal in a thread safe way.
+* The mutex of a 'ts_array' is public to allow aggregate initialization.
+* While this is an inherent flaw, it can be used for low level access.
+* BUT: the mutex is not a recursive_mutex: so if you lock it
+* and call any method that locks it, this would be UB (you are warned!).
+* Only .size() and .data() do not lock the mutex.
+* 
+* A non-thread safe array 'array' provides an iterator interface, and other
+* helpful methods.
+* Most notably: .to_view() and its overloads.
+* Rather than passing a 'const array&' to a function, you should prefer
+* passing a 'contiguous_struct_view', which acts like a span (a non-owning pointer and a size)
+* with additional helpful methods.
+*/
+
 #pragma once
 #include <vale_structs/common.h>
 
@@ -57,7 +79,7 @@ namespace vale
 				buffer[i] = std::move(temp);
 			}
 		}
-		
+
 		/// @brief Returns the object at 'index', and throws if the index is out of range.
 		/// If the index is greater than nb_elem - 1, throws std::out_of_range
 		/// @param index The index of the object
@@ -166,7 +188,7 @@ namespace vale
 			std::scoped_lock lock{ mutex };
 			for (size_t i = 0; i < nb_elem; i++)
 				func(buffer[i]);
-		}		
+		}
 
 		template<typename Func, typename... Args>
 		/// @brief Passes begin and end iterators followed by an argument pack to a function, and returns the result of the function.
@@ -335,17 +357,17 @@ namespace vale
 		/// @brief Returns a view of all the items in the struct
 		/// @return view of all the items in the struct
 		[[nodiscard]] constexpr array_view<T> to_view() noexcept { return array_view<T>(buffer, nb_elem); }
-		
+
 		/// @brief Returns a view of all the items in the struct starting from offset.
 		/// Throws if offset >= nb_elem.
 		/// @return view of all the items in the struct beginning from offset, or throws.
 		[[nodiscard]] array_view<T> to_view(size_t offset)
-		{ 
+		{
 			if (offset < nb_elem)
 				return array_view<T>(buffer + offset, nb_elem - offset);
 			throw std::out_of_range("vale::array: offset was greater than size!");
 		}
-		
+
 		/// @brief Returns a view of 'size' items in the struct starting from offset.
 		/// Throws if offset >= nb_elem.
 		/// @return view of 'size' items in the struct beginning from offset, or throws.
