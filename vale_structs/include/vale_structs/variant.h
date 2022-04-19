@@ -37,6 +37,53 @@ namespace vale
 
 	public:
 
+		/******************************************
+		STATIC HELPERS
+		******************************************/
+
+		/// @brief Returns the maximum index that can be active.
+		/// @return The number of types in the variant parameter pack
+		static constexpr uint64_t max_active_index() noexcept { return sizeof...(Rest); }
+
+		/// @brief Returns the index representing an invalid state
+		/// @return max_active_index() + 1
+		static constexpr uint64_t invalid_index() noexcept { return sizeof...(Rest) + 1; }
+
+		/// @brief Check if the variant can be in an invalid state
+		/// @return True if all the types are fundamental
+		static constexpr bool can_be_invalid() noexcept
+		{
+			return sizeof...(Rest) + 1 != helpers::count_fundamental_v<First, Rest...>;
+		}
+
+		/// @brief Check the complexity of the algorithm used for destructing active object
+		/// This is the algorithm that decides if the destruction algorithm has a complexity of O(1) or O(n).
+		static constexpr algorithm destructor_complexity() noexcept
+		{
+			// if more than 9/10 of the types are not fundamental, use the constant time destruction algorithm
+			// As we are using integer division, if there are less than 10 types
+			if constexpr (helpers::count_non_fundamental_v<First, Rest...>
+					> ((sizeof...(Rest) + 1) * 9) / 10)
+			{
+				return algorithm::constant_complexity;
+			}
+			else
+			{
+				return algorithm::linear_complexity;
+			}
+		}
+
+		/// @brief Check if the variant's destructor is noexcept (all the types' destructors are noexcept)
+		/// @return True if the variant's destructor is noexcept
+		static constexpr bool is_noexcept_destructible() noexcept
+		{
+			return std::conjunction_v<std::is_nothrow_destructible<First>, std::is_nothrow_destructible<Rest>...>;
+		}
+
+		/******************************************
+		METHODS AND CONSTRUCTORS
+		******************************************/
+
 		/// @brief Default construct the first type 
 		variant() noexcept(std::is_nothrow_default_constructible_v<First>)
 		{
@@ -143,46 +190,7 @@ namespace vale
 				"Type isn't part of the template parameter pack of the variant!");
 			destruct_active();
 			construct<T>(std::forward<Args>(args)...);
-		}
-
-		/******************************************
-		STATIC HELPERS
-		******************************************/
-
-		/// @brief Returns the maximum index that can be active.
-		/// @return The number of types in the variant parameter pack
-		static constexpr uint64_t max_index() noexcept { return sizeof...(Rest); }
-
-		/// @brief Check if the variant can be in an invalid state
-		/// @return True if all the types are fundamental
-		static constexpr bool can_be_invalid() noexcept
-		{
-			return sizeof...(Rest) + 1 != helpers::count_fundamental_v<First, Rest...>;
-		}
-
-		/// @brief Check the complexity of the algorithm used for destructing active object
-		/// This is the algorithm that decides if the destruction algorithm has a complexity of O(1) or O(n).
-		static constexpr algorithm destructor_complexity() noexcept
-		{
-			// if more than 9/10 of the types are not fundamental, use the constant time destruction algorithm
-			// As we are using integer division, if there are less than 10 types
-			if constexpr (helpers::count_non_fundamental_v<First, Rest...>
-					> ((sizeof...(Rest) + 1) * 9) / 10)
-			{
-				return algorithm::constant_complexity;
-			}
-			else
-			{
-				return algorithm::linear_complexity;
-			}
-		}
-
-		/// @brief Check if the variant's destructor is noexcept (all the types' destructors are noexcept)
-		/// @return True if the variant's destructor is noexcept
-		static constexpr bool is_noexcept_destructible() noexcept
-		{
-			return std::conjunction_v<std::is_nothrow_destructible<First>, std::is_nothrow_destructible<Rest>...>;
-		}
+		}		
 
 	private:
 
