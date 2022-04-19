@@ -22,7 +22,7 @@ namespace vale
 	/// @brief Variant destructor policy, which signifies that the linear complexity destructor should be used
 	struct LinearComplexityDestruct {};
 	/// @brief Variant destructor policy, which signifies that the constant complexity destructor should be used
-	struct ConstantComplexityDestruct{};
+	struct ConstantComplexityDestruct {};
 
 	/// @brief Contains meta-programing utilities
 	namespace details
@@ -105,54 +105,6 @@ namespace vale
 	namespace helpers
 	{
 		/******************************************
-		MAX/MIN SIZE OF TYPE IN PACK
-		******************************************/		
-
-		template<typename First, typename... Rest>
-		/// @brief Helper type to access the maximum sizeof all types passed as template arguments
-		/// @tparam First The first type
-		/// @tparam ...Rest Parameter pack
-		struct get_max_size_of_type_pack
-		{
-			static constexpr uint64_t size = std::max({ sizeof(First), sizeof(Rest)... });
-		};
-
-		template<>
-		/// @brief Helper type overload for errors, as void doesn't have a size
-		struct get_max_size_of_type_pack<void>
-		{
-			//No 'size' field so this results in a compilation error
-		};
-
-		template<typename First, typename... Rest>
-		/// @brief Helper to get the maximum sizeof all types passed as template arguments
-		/// @tparam First The first type
-		/// @tparam ...Rest Parameter pack
-		static constexpr uint64_t get_max_size_of_type_pack_v = get_max_size_of_type_pack<First, Rest...>::size;
-
-		template<typename First, typename... Rest>
-		/// @brief Helper to get the minimum sizeof all types passed as template arguments
-		/// @tparam First The first type
-		/// @tparam ...Rest Parameter pack
-		struct get_min_size_of_type_pack
-		{
-			static constexpr uint64_t size = std::min({ sizeof(First), sizeof(Rest)... });
-		};
-
-		template<>
-		/// @brief Helper type overload for errors, as void doesn't have a size
-		struct get_min_size_of_type_pack<void>
-		{
-			//No 'size' field to cause compilation error.
-		};
-
-		template<typename First, typename... Rest>
-		/// @brief Helper to get the minimum sizeof all types passed as template arguments
-		/// @tparam First The first type
-		/// @tparam ...Rest Parameter pack
-		static constexpr uint64_t get_min_size_of_type_pack_v = get_min_size_of_type_pack<First, Rest...>::size;		
-
-		/******************************************
 		THREAD SAFETY POLICY
 		******************************************/
 
@@ -211,7 +163,7 @@ namespace vale
 		struct count_fundamental
 		{
 			static constexpr uint64_t value = std::is_fundamental_v<First>
-				+ (std::is_fundamental_v<Rest> + ...);
+				+(std::is_fundamental_v<Rest> +...);
 		};
 
 		template<typename First, typename... Rest>
@@ -227,7 +179,7 @@ namespace vale
 		struct count_non_fundamental
 		{
 			static constexpr uint64_t value = !std::is_fundamental_v<First>
-				+ (!std::is_fundamental_v<Rest> + ...);
+				+(!std::is_fundamental_v<Rest> +...);
 		};
 
 		template<typename First, typename... Rest>
@@ -348,6 +300,42 @@ namespace vale
 		static constexpr bool is_pack_with_no_duplicates_v = is_pack_with_no_duplicates<First, Rest...>::value;
 
 		/******************************************
+		MAX/MIN SIZE OF TYPE IN PACK
+		******************************************/
+
+		template<typename First, typename... Rest>
+		/// @brief Helper type to access the maximum sizeof all types passed as template arguments
+		/// @tparam First The first type
+		/// @tparam ...Rest Parameter pack
+		struct get_max_size_of_type_pack
+		{
+			static_assert(is_type_not_in_pack_v<void, First, Rest...>, "Type 'void' does not have a size!");
+			static constexpr uint64_t size = std::max({ sizeof(First), sizeof(Rest)... });
+		};
+
+		template<typename First, typename... Rest>
+		/// @brief Helper to get the maximum sizeof all types passed as template arguments
+		/// @tparam First The first type
+		/// @tparam ...Rest Parameter pack
+		static constexpr uint64_t get_max_size_of_type_pack_v = get_max_size_of_type_pack<First, Rest...>::size;
+
+		template<typename First, typename... Rest>
+		/// @brief Helper to get the minimum sizeof all types passed as template arguments
+		/// @tparam First The first type
+		/// @tparam ...Rest Parameter pack
+		struct get_min_size_of_type_pack
+		{
+			static_assert(is_type_not_in_pack_v<void, First, Rest...>, "Type 'void' does not have a size!");
+			static constexpr uint64_t size = std::min({ sizeof(First), sizeof(Rest)... });
+		};
+
+		template<typename First, typename... Rest>
+		/// @brief Helper to get the minimum sizeof all types passed as template arguments
+		/// @tparam First The first type
+		/// @tparam ...Rest Parameter pack
+		static constexpr uint64_t get_min_size_of_type_pack_v = get_min_size_of_type_pack<First, Rest...>::size;
+
+		/******************************************
 		TYPE WITH GREATEST SIZEOF IN PACK
 		******************************************/
 
@@ -359,7 +347,7 @@ namespace vale
 		};
 
 		template<typename First, typename... Rest>
-		using get_type_of_max_size_t = 
+		using get_type_of_max_size_t =
 			typename get_type_of_max_size<First, Rest...>::type;
 	}
 
