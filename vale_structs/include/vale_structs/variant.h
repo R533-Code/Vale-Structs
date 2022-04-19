@@ -18,12 +18,7 @@ namespace vale
 	{
 	public:
 		const char* what() const noexcept override { return "The variant was in an invalid state!"; }
-	};
-
-	enum class algorithm
-	{
-		linear_complexity, constant_complexity
-	};
+	};	
 
 	template<typename First, typename... Rest>
 	class variant
@@ -52,7 +47,7 @@ namespace vale
 		/// @brief Creates a variant storing an object of type 'T'
 		/// @tparam T The type of the active object
 		/// @param object The value of the new object to store
-		variant(const T& object)
+		variant(const T& object) noexcept(std::is_nothrow_copy_constructible_v<T>)
 		{
 			//The type should be part of the parameter pack of the variant
 			static_assert(!helpers::is_type_not_in_pack_v<T, First, Rest...>,
@@ -61,7 +56,7 @@ namespace vale
 		}
 
 		/// @brief Destroys the variant, destroying the active object
-		~variant()
+		~variant() noexcept(is_noexcept_destructible())
 		{
 			destruct_active();
 		}
@@ -113,31 +108,11 @@ namespace vale
 
 		/// @brief Returns the index of the current active type
 		/// @return The active index, or max_index() + 1 to signify invalid state
-		uint64_t index() const noexcept { return type; }
-
-		/// @brief Returns the maximum index that can be active.
-		/// @return The number of types in the variant parameter pack
-		constexpr uint64_t max_index() const noexcept { return sizeof...(Rest); }
-
-		/// @brief Check if the variant can be in an invalid state
-		/// TODO: fix if all constructor are noexcept
-		static constexpr bool can_be_invalid() noexcept { return sizeof...(Rest) + 1 != helpers::count_fundamental_v<First, Rest...>; }
-
-		/// @brief Check the complexity of the algorithm used for destructing active object
-		/// This is the algorithm that decides if the destruction algorithm has a complexity of O(1) or O(n).
-		static constexpr algorithm destructor_complexity() noexcept
-		{
-			// if more than 9/10 of the types are not fundamental, use the constant time destruction algortihm
-			if constexpr (static_cast<float>(helpers::count_non_fundamental_v<First, Rest...>) 
-					> static_cast<float>(sizeof...(Rest) + 1) * 9 / 10)
-				return algorithm::constant_complexity;
-			else
-				return algorithm::linear_complexity;
-		}
+		uint64_t index() const noexcept { return type; }		
 
 		/// @brief Checks if the variant is in a valid state
 		/// @return true if the variant is valid, or false
-		bool is_valid() const noexcept { return type == sizeof...(Rest) + 1;}
+		bool is_valid() const noexcept { return type != sizeof...(Rest) + 1; }
 
 		/// @brief Helper method to print a variant's active content
 		/// @param os The ostream in which to << the content
@@ -219,7 +194,7 @@ namespace vale
 		/// @param ...args The arguments to forward to the constructor
 		void construct(Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
 		{
-			type = helpers::get_index_of_type_from_pack_v<T, First, Rest...>;			
+			type = helpers::get_index_of_type_from_pack_v<T, First, Rest...>;
 			
 			//If the constructor can't throw, do not check try/catch exceptions
 			if constexpr (std::is_nothrow_constructible_v<T, Args...>)
@@ -228,40 +203,48 @@ namespace vale
 			}
 			else
 			{
-			try
-			{
-				new(buffer) T(std::forward<Args>(args)...);
-			}
-			catch(...) //The constructor throwed an error
-			{
-				set_invalid_state();
-				throw; //Rethrow the error from the constructor
+				try
+				{
+					new(buffer) T(std::forward<Args>(args)...);
+				}
+				catch(...) //The constructor throwed an error
+				{
+					set_invalid_state();
+					throw; //Rethrow the error from the constructor
+				}
 			}
 		}
 
 		/// @brief Destruct the active object if the variant is valid.
 		/// Chooses the best algorithm for destroying.
-		inline void destruct_active()
+		inline void destruct_active() noexcept(is_noexcept_destructible())
 		{
-			//we only want to check if the variant is valid if it can be invalid
-			if constexpr (can_be_invalid())
+			if constexpr (std::conjunction_v<std::is_fundamental<First>, std::is_fundamental<Rest>...>)
 			{
-				if (is_valid())
+				//If all the types are fundamental, we shouldn't bother doing anything
+			}
+			else
+			{
+				//we only want to check if the variant is valid if it can be invalid
+				if constexpr (can_be_invalid())
 				{
+					if (is_valid())
+					{
+						if constexpr (destructor_complexity() == algorithm::constant_complexity)
+							impl_destruct_active_constant();					
+						else
+							impl_destruct_active_linear<0, First, Rest...>();
+					}
+					//There is no need to do anything if the variant is not valid
+				}
+				else
+				{
+					// if more than 9/10 of the types are not fundamental, use the constant time destruction algortihm
 					if constexpr (destructor_complexity() == algorithm::constant_complexity)
 						impl_destruct_active_constant();					
 					else
 						impl_destruct_active_linear<0, First, Rest...>();
 				}
-				//There is no need to do anything if the variant is not valid
-			}
-			else
-			{
-				// if more than 9/10 of the types are not fundamental, use the constant time destruction algortihm
-				if constexpr (destructor_complexity() == algorithm::constant_complexity)
-					impl_destruct_active_constant();					
-				else
-					impl_destruct_active_linear<0, First, Rest...>();
 			}
 		}
 
@@ -271,14 +254,16 @@ namespace vale
 			type = sizeof...(Rest) + 1;
 		}
 
-		/*LINEAR-COMPLEXITY ALGORITHMS*/
+		/******************************************
+		LINEAR COMPLEXITY ALGORITHM
+		******************************************/
 
 		template<size_t index_t = 0, typename FirstT, typename... RestT>
 		/// @brief Destructs the active type, using recursion, to check for the type to destroy.
 		/// O(n) implementation of destruct_active().
 		/// @tparam FirstT The first type
 		/// @tparam ...RestT The rest of the pack
-		void impl_destruct_active_linear()
+		void impl_destruct_active_linear() noexcept(is_noexcept_destructible())
 		{
 			if (index_t == type)
 				reinterpret_cast<const FirstT*>(buffer)->~FirstT(); //Call destructor
@@ -290,14 +275,16 @@ namespace vale
 		/// @brief Overload of destruct_active for when there are no longer a type.
 		/// As we have checked for all the types in the pack, this means that
 		/// active type was not any of the types in the pack.
-		void impl_destruct_active_linear() {}
+		void impl_destruct_active_linear() noexcept {}
 
-		/*CONSTANT-COMPLEXITY ALGORITHMS*/
+		/******************************************
+		CONSTANT COMPLEXITY ALGORITHM
+		******************************************/
 
 		/// @brief Destroys the active object in constant time.
 		/// This might be faster if there are no trivial types,
 		/// or a lot of non-trivial type. SHOULD NOT BE CALLED IF THE VARIANT IS INVALID
-		inline void impl_destruct_active_constant()
+		inline void impl_destruct_active_constant() noexcept(is_noexcept_destructible())
 		{
 			//We initialize an array of pointers to the destructor of each
 			//type. The index is the destructor to call.
@@ -310,7 +297,7 @@ namespace vale
 		template<typename T>
 		/// @brief Helper static method that calls the destructor of an object
 		/// @tparam T The type to cast to, to call its destructor
-		static void destruct_active_constant_delete(void* buffer)
+		static void destruct_active_constant_delete(void* buffer) noexcept(is_noexcept_destructible())
 		{
 			reinterpret_cast<const T*>(buffer)->~T();
 		}		
