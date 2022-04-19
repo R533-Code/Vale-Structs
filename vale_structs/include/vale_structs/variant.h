@@ -159,6 +159,64 @@ namespace vale
 			construct<T>(object);
 		}
 
+		variant_impl(std::enable_if_t<is_copyable(), const variant_impl&> to_copy) noexcept(is_noexcept_copyable())
+		{
+			type = to_copy.type;
+			if constexpr (can_be_invalid())
+			{
+				if (to_copy.is_valid())
+					impl_copy_variant_content(to_copy.buffer);
+			}
+			else
+			{
+				impl_copy_variant_content(to_copy.buffer);
+			}
+		}
+
+		variant_impl(std::enable_if_t<is_movable(), variant_impl&&> to_move) noexcept(is_noexcept_movable())
+		{
+			type = to_move.type;
+			if constexpr (can_be_invalid())
+			{
+				if (to_move.is_valid())
+					impl_move_variant_content(to_move.buffer);
+			}
+			else
+			{
+				impl_move_variant_content(to_move.buffer);
+			}
+		}
+
+		variant_impl& operator=(std::enable_if_t<is_copyable(), const variant_impl&> to_copy) noexcept(is_noexcept_copyable())
+		{
+			destruct_active();
+			type = to_copy.type;
+			if constexpr (can_be_invalid())
+			{
+				if (to_copy.is_valid())
+					impl_copy_variant_content(to_copy.buffer);
+			}
+			else
+			{
+				impl_copy_variant_content(to_copy.buffer);
+			}
+		}
+
+		variant_impl& operator=(std::enable_if_t<is_movable(), variant_impl&&> to_move) noexcept(is_noexcept_movable())
+		{
+			destruct_active();
+			type = to_move.type;
+			if constexpr (can_be_invalid())
+			{
+				if (to_move.is_valid())
+					impl_move_variant_content(to_move.buffer);
+			}
+			else
+			{
+				impl_move_variant_content(to_move.buffer);
+			}
+		}
+
 		/// @brief Destroys the variant, destroying the active object
 		~variant_impl() noexcept(is_noexcept_destructible())
 		{
