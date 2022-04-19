@@ -150,19 +150,7 @@ namespace vale
 		/// @brief Helper to get the minimum sizeof all types passed as template arguments
 		/// @tparam First The first type
 		/// @tparam ...Rest Parameter pack
-		static constexpr uint64_t get_min_size_of_type_pack_v = get_min_size_of_type_pack<First, Rest...>::size;
-
-		template<typename First, typename... Rest>
-		struct get_type_of_max_size
-		{
-			using type =
-				typename details::search_for_type_of_size_in_pack_t<get_max_size_of_type_pack_v<First, Rest...>, First, Rest...>;
-			static constexpr uint64_t value = get_index_of_type_from_pack_v<type, First, Rest...>;
-		};
-
-		template<typename First, typename... Rest>
-		using get_type_of_max_size_t = 
-			typename get_type_of_max_size<First, Rest...>::type;
+		static constexpr uint64_t get_min_size_of_type_pack_v = get_min_size_of_type_pack<First, Rest...>::size;		
 
 		/******************************************
 		THREAD SAFETY POLICY
@@ -358,6 +346,21 @@ namespace vale
 		template<typename First, typename... Rest>
 		/// @brief Check if a parameter pack does not contain any duplicate types
 		static constexpr bool is_pack_with_no_duplicates_v = is_pack_with_no_duplicates<First, Rest...>::value;
+
+		/******************************************
+		TYPE WITH GREATEST SIZEOF IN PACK
+		******************************************/
+
+		template<typename First, typename... Rest>
+		struct get_type_of_max_size
+		{
+			using type =
+				typename details::search_for_type_of_size_in_pack_t<get_max_size_of_type_pack_v<First, Rest...>, First, Rest...>;
+		};
+
+		template<typename First, typename... Rest>
+		using get_type_of_max_size_t = 
+			typename get_type_of_max_size<First, Rest...>::type;
 	}
 
 	/// @brief Enum representing an algorithm complexity
