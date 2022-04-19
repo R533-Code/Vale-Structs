@@ -109,6 +109,34 @@ namespace vale
 			return std::conjunction_v<std::is_nothrow_destructible<First>, std::is_nothrow_destructible<Rest>...>;
 		}
 
+		/// @brief Check if a variant is copyable
+		/// @return True if all the possible type that can be stored by the variant can be copy constructed
+		static constexpr bool is_copyable() noexcept
+		{
+			return std::conjunction_v<std::is_copy_constructible<First>, std::is_copy_constructible<Rest>...>;
+		}
+
+		/// @brief Check if a variant is noexcept copyable
+		/// @return True if all the possible type that can be stored by the variant can be noexcept copy constructed
+		static constexpr bool is_noexcept_copyable() noexcept
+		{
+			return std::conjunction_v<std::is_nothrow_copy_constructible<First>, std::is_nothrow_copy_constructible<Rest>...>;
+		}
+
+		/// @brief Check if a variant is movable
+		/// @return True if all the possible type that can be stored by the variant can be move constructed
+		static constexpr bool is_movable() noexcept
+		{
+			return std::conjunction_v<std::is_move_constructible<First>, std::is_move_constructible<Rest>...>;
+		}
+
+		/// @brief Check if a variant is movable
+		/// @return True if all the possible type that can be stored by the variant can be noexcept move constructed
+		static constexpr bool is_noexcept_movable() noexcept
+		{
+			return std::conjunction_v<std::is_nothrow_move_constructible<First>, std::is_nothrow_move_constructible<Rest>...>;
+		}
+
 		/******************************************
 		METHODS AND CONSTRUCTORS
 		******************************************/
