@@ -35,6 +35,9 @@ namespace vale
 	/// @tparam DestructionPolicy The variant's destruction complexity policy
 	class variant_impl<DestructionPolicy, NonThreadSafe, First, Rest...>
 	{
+		static_assert(helpers::is_type_not_in_pack_v < void, First, Rest...>,
+			"Type 'void' is not accepted in variant's template arguments!");
+
 		static_assert(helpers::is_variant_destructor_policy_v<DestructionPolicy>,
 			"DestructionPolicy can only be [Auto|Linear|Constant]ComplexityDestruct");
 
