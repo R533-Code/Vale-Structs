@@ -166,7 +166,10 @@ namespace vale
 		/// @return True if all the possible type that can be stored by the variant can be noexcept copy constructed
 		static constexpr bool is_noexcept_copyable() noexcept
 		{
-			return std::conjunction_v<std::is_nothrow_copy_constructible<First>, std::is_nothrow_copy_constructible<Rest>...>;
+			if constexpr (is_copyable())
+				return std::conjunction_v<std::is_nothrow_copy_constructible<First>, std::is_nothrow_copy_constructible<Rest>...>;
+			else
+				return false;
 		}
 
 		/// @brief Check if a variant is movable
@@ -180,7 +183,10 @@ namespace vale
 		/// @return True if all the possible type that can be stored by the variant can be noexcept move constructed
 		static constexpr bool is_noexcept_movable() noexcept
 		{
-			return std::conjunction_v<std::is_nothrow_move_constructible<First>, std::is_nothrow_move_constructible<Rest>...>;
+			if constexpr (is_movable())
+				return std::conjunction_v<std::is_nothrow_move_constructible<First>, std::is_nothrow_move_constructible<Rest>...>;
+			else
+				return false;
 		}
 
 		/******************************************
@@ -469,8 +475,8 @@ namespace vale
 		void impl_copy_variant_content(const void* from) noexcept(is_noexcept_copyable())
 		{
 			static constexpr vale::array dt
-				= { &helpers::copy_construct_ptr<First, is_noexcept_copyable()>,
-				&helpers::copy_construct_ptr<Rest, is_noexcept_copyable()>... };
+				= { &helpers::copy_construct_ptr<First, std::conjunction_v<std::is_nothrow_copy_constructible<First>, std::is_nothrow_copy_constructible<Rest>...>>,
+				&helpers::copy_construct_ptr<Rest, std::conjunction_v<std::is_nothrow_copy_constructible<First>, std::is_nothrow_copy_constructible<Rest>...>>... };
 
 			dt[type](from, buffer);
 		}
@@ -481,8 +487,8 @@ namespace vale
 		void impl_move_variant_content(void* from) noexcept(is_noexcept_movable())
 		{
 			static constexpr vale::array dt
-				= { &helpers::move_construct_ptr<First, is_noexcept_movable()>,
-				&helpers::move_construct_ptr<Rest, is_noexcept_movable()>... };
+				= { &helpers::move_construct_ptr<First, std::conjunction_v<std::is_nothrow_move_constructible<First>, std::is_nothrow_move_constructible<Rest>...>>,
+				&helpers::move_construct_ptr<Rest, std::conjunction_v<std::is_nothrow_move_constructible<First>, std::is_nothrow_move_constructible<Rest>...>>... };
 
 			dt[type](from, buffer);
 		}
