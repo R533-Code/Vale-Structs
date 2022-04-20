@@ -21,6 +21,48 @@ namespace vale
 		const char* what() const noexcept override { return "The variant was in an invalid state!"; }
 	};
 
+	namespace helpers
+	{
+		template<typename T, bool isnoexcept>
+		/// @brief Copy constructs in 'to' by casting 'from' to 'const T&'
+		/// @tparam T The type whose copy constructor should be called
+		/// @param from Pointer to the object to pass to the copy constructor
+		/// @param to Where to construct the object
+		static void copy_construct_ptr(const void* from, void* to) noexcept(isnoexcept)
+		{
+			new(to) T(*reinterpret_cast<const T*>(from));
+		}
+
+		template<typename T, bool isnoexcept>
+		/// @brief Copy constructs in 'to' by casting 'from' to 'const T&'
+		/// @tparam T The type whose copy constructor should be called
+		/// @param from Pointer to the object to pass to the copy constructor
+		/// @param to Where to construct the object
+		static void move_construct_ptr(void* from, void* to) noexcept(isnoexcept)
+		{
+			new(to) T(std::move(*reinterpret_cast<T*>(from)));
+		}
+
+		template<typename T, bool isnoexcept>
+		/// @brief Helper static method that calls the destructor of an object
+		/// @tparam T The type to cast to, to call its destructor
+		static void destruct_active_delete_ptr(void* buffer) noexcept(isnoexcept)
+		{
+			reinterpret_cast<const T*>(buffer)->~T();
+		}
+
+		template<typename T>
+		/// @brief Helper static method that converts the buffer to the appropriate type and << in 'os'.
+		/// This method is will cause a compilation error if not all type can be << to an ostream.
+		/// @tparam T The type to which to cast 'buffer'
+		/// @param os The ostream in which to << the casted result
+		/// @param buffer The buffer to cast
+		static void print_variant_ptr(std::ostream& os, const void* buffer)
+		{
+			os << *reinterpret_cast<const T*>(buffer);
+		}
+	}
+
 	template<typename DestructionPolicy, typename ThreadSafety, typename First, typename... Rest>
 	/// @brief Unspecialized variant_impl, if the ThreadSafety is not a valid type
 	/// @tparam DestructionPolicy The variant's destruction complexity policy
@@ -287,8 +329,8 @@ namespace vale
 			//We initialize an array of pointers to the printing method of each
 			//type. The index is the function to call.
 			static const vale::array dt
-				= { &print_variant_ptr<First>,
-				&print_variant_ptr<Rest>... };
+				= { &helpers::print_variant_ptr<First>,
+				&helpers::print_variant_ptr<Rest>... };
 
 			if constexpr (can_be_invalid())
 			{
@@ -416,38 +458,9 @@ namespace vale
 			//We initialize an array of pointers to the destructor of each
 			//type. The index is the destructor to call.
 			static constexpr vale::array dt
-				= { &destruct_active_delete_ptr<First>,
-				&destruct_active_delete_ptr<Rest>... };
+				= { &helpers::destruct_active_delete_ptr<First, is_noexcept_destructible()>,
+				&helpers::destruct_active_delete_ptr<Rest, is_noexcept_destructible()>... };
 			dt[type](buffer);
-		}
-
-		template<typename T>
-		/// @brief Helper static method that calls the destructor of an object
-		/// @tparam T The type to cast to, to call its destructor
-		static void destruct_active_delete_ptr(void* buffer) noexcept(is_noexcept_destructible())
-		{
-			reinterpret_cast<const T*>(buffer)->~T();
-		}
-
-		template<typename T>
-		/// @brief Helper static method that converts the buffer to the appropriate type and << in 'os'.
-		/// This method is will cause a compilation error if not all type can be << to an ostream.
-		/// @tparam T The type to which to cast 'buffer'
-		/// @param os The ostream in which to << the casted result
-		/// @param buffer The buffer to cast
-		static void print_variant_ptr(std::ostream& os, const void* buffer)
-		{
-			os << *reinterpret_cast<const T*>(buffer);
-		}
-
-		template<typename T>
-		/// @brief Copy constructs in 'to' by casting 'from' to 'const T&'
-		/// @tparam T The type whose copy constructor should be called
-		/// @param from Pointer to the object to pass to the copy constructor
-		/// @param to Where to construct the object
-		static void copy_construct_ptr(const void* from, void* to) noexcept(std::conjunction_v<std::is_nothrow_copy_constructible<First>, std::is_nothrow_copy_constructible<Rest>...>)
-		{
-			new(to) T(*reinterpret_cast<const T*>(from));
 		}
 
 		/// @brief Copies the active object of a variant.
@@ -456,20 +469,10 @@ namespace vale
 		void impl_copy_variant_content(const void* from) noexcept(is_noexcept_copyable())
 		{
 			static constexpr vale::array dt
-				= { &copy_construct_ptr<First>,
-				&copy_construct_ptr<Rest>... };
+				= { &helpers::copy_construct_ptr<First, is_noexcept_copyable()>,
+				&helpers::copy_construct_ptr<Rest, is_noexcept_copyable()>... };
 
 			dt[type](from, buffer);
-		}		
-
-		template<typename T>
-		/// @brief Copy constructs in 'to' by casting 'from' to 'const T&'
-		/// @tparam T The type whose copy constructor should be called
-		/// @param from Pointer to the object to pass to the copy constructor
-		/// @param to Where to construct the object
-		static void move_construct_ptr(void* from, void* to) noexcept(is_noexcept_movable())
-		{
-			new(to) T(std::move(*reinterpret_cast<T*>(from)));
 		}
 
 		/// @brief Copies the active object of a variant.
@@ -478,11 +481,11 @@ namespace vale
 		void impl_move_variant_content(void* from) noexcept(is_noexcept_movable())
 		{
 			static constexpr vale::array dt
-				= { &move_construct_ptr<First>,
-				&move_construct_ptr<Rest>... };
+				= { &helpers::move_construct_ptr<First, is_noexcept_movable()>,
+				&helpers::move_construct_ptr<Rest, is_noexcept_movable()>... };
 
 			dt[type](from, buffer);
-		}		
+		}
 	};
 
 	template<typename DestructionPolicy, typename First, typename... Rest>
