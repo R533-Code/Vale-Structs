@@ -23,30 +23,30 @@ namespace vale
 
 	namespace helpers
 	{
-		template<typename T, bool isnoexcept>
+		template<typename T>
 		/// @brief Copy constructs in 'to' by casting 'from' to 'const T&'
 		/// @tparam T The type whose copy constructor should be called
 		/// @param from Pointer to the object to pass to the copy constructor
 		/// @param to Where to construct the object
-		static void copy_construct_ptr(const void* from, void* to) noexcept(isnoexcept)
+		static inline void copy_construct_ptr(const void* from, void* to)
 		{
 			new(to) T(*reinterpret_cast<const T*>(from));
 		}
 
-		template<typename T, bool isnoexcept>
+		template<typename T>
 		/// @brief Copy constructs in 'to' by casting 'from' to 'const T&'
 		/// @tparam T The type whose copy constructor should be called
 		/// @param from Pointer to the object to pass to the copy constructor
 		/// @param to Where to construct the object
-		static void move_construct_ptr(void* from, void* to) noexcept(isnoexcept)
+		static inline void move_construct_ptr(void* from, void* to)
 		{
 			new(to) T(std::move(*reinterpret_cast<T*>(from)));
 		}
 
-		template<typename T, bool isnoexcept>
+		template<typename T>
 		/// @brief Helper static method that calls the destructor of an object
 		/// @tparam T The type to cast to, to call its destructor
-		static void destruct_active_delete_ptr(void* buffer) noexcept(isnoexcept)
+		static inline void destruct_active_delete_ptr(void* buffer)
 		{
 			reinterpret_cast<const T*>(buffer)->~T();
 		}
@@ -464,8 +464,9 @@ namespace vale
 			//We initialize an array of pointers to the destructor of each
 			//type. The index is the destructor to call.
 			static constexpr vale::array dt
-				= { &helpers::destruct_active_delete_ptr<First, is_noexcept_destructible()>,
-				&helpers::destruct_active_delete_ptr<Rest, is_noexcept_destructible()>... };
+				= { &helpers::destruct_active_delete_ptr<First>,
+				&helpers::destruct_active_delete_ptr<Rest>... };
+
 			dt[type](buffer);
 		}
 
@@ -475,8 +476,8 @@ namespace vale
 		void impl_copy_variant_content(const void* from) noexcept(is_noexcept_copyable())
 		{
 			static constexpr vale::array dt
-				= { &helpers::copy_construct_ptr<First, std::conjunction_v<std::is_nothrow_copy_constructible<First>, std::is_nothrow_copy_constructible<Rest>...>>,
-				&helpers::copy_construct_ptr<Rest, std::conjunction_v<std::is_nothrow_copy_constructible<First>, std::is_nothrow_copy_constructible<Rest>...>>... };
+				= { &helpers::copy_construct_ptr<First>,
+				&helpers::copy_construct_ptr<Rest>... };
 
 			dt[type](from, buffer);
 		}
@@ -487,8 +488,8 @@ namespace vale
 		void impl_move_variant_content(void* from) noexcept(is_noexcept_movable())
 		{
 			static constexpr vale::array dt
-				= { &helpers::move_construct_ptr<First, std::conjunction_v<std::is_nothrow_move_constructible<First>, std::is_nothrow_move_constructible<Rest>...>>,
-				&helpers::move_construct_ptr<Rest, std::conjunction_v<std::is_nothrow_move_constructible<First>, std::is_nothrow_move_constructible<Rest>...>>... };
+				= { &helpers::move_construct_ptr<First>,
+				&helpers::move_construct_ptr<Rest>... };
 
 			dt[type](from, buffer);
 		}
