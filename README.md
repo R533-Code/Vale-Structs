@@ -2,7 +2,7 @@
 Header-only `C++` container and helper classes.
 
 # Classes to Implement:
-- [X] `vale::array`: a stack allocated fixed array of objects
+- [X] `vale::array`: a stack-allocated fixed-size array of objects
 - [X] `vale::variant`: a type-safe union (in progress)
 - [ ] `vale::vector`: a heap allocated variable-sized array
 - [ ] `vale::string`: a string class with helpful methods for string manipulation
@@ -11,5 +11,4 @@ Header-only `C++` container and helper classes.
 
 # Goals:
 - Implement a reusable skeleton of classes.
-- Take advantage of `concept`s when possible.
 - Allow greater customization.
