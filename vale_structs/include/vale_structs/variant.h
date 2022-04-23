@@ -705,7 +705,7 @@ namespace vale
 					variant.
 						template emplace<T>(std::forward<Args>(args)...);
 				}
-				catch { return false; }
+				catch (...) { return false; }
 			}
 		}
 
