@@ -523,21 +523,255 @@ namespace vale
 	};
 
 	template<typename DestructionPolicy, typename First, typename... Rest>
-	class variant_impl<DestructionPolicy, ThreadSafe, First, Rest...>
-		: private variant_impl<DestructionPolicy, NonThreadSafe, First, Rest...>
+	class variant_impl<DestructionPolicy, ThreadSafe, First, Rest...>		
 	{
 		// static asserts are done by the variant inherited
 
+		variant_impl<DestructionPolicy, NonThreadSafe, First, Rest...> variant{};
+
 		/// @brief The mutex which protects the data
-		mutable std::mutex mutex;
+		mutable std::mutex mutex{};
+
+		using variant_t = variant_impl<DestructionPolicy, NonThreadSafe, First, Rest...>;
 
 	public:
 
+		/// @brief Accesses the underlying variant non-thread safely
+		/// @return Reference to the variant
+		constexpr variant_t& get_underlying_variant() noexcept { return variant; }
+		
+		/// @brief Accesses the underlying variant non-thread safely
+		/// @return const reference to the variant
+		constexpr const variant_t& get_underlying_variant() const noexcept { return variant; }
+
+		/// @brief Accesses the underlying mutex non-thread safely
+		/// @return Reference to the mutex
+		constexpr std::mutex& get_underlying_mutex() const noexcept { return mutex; }
+
+		/******************************************
+		STATIC HELPERS
+		******************************************/
+
+		/// @brief Returns the maximum index that can be active.
+		/// @return The number of types in the variant parameter pack
+		static constexpr uint64_t max_active_index() noexcept { return sizeof...(Rest); }
+
+		/// @brief Returns the index representing an invalid state
+		/// @return max_active_index() + 1
+		static constexpr size_t invalid_index() noexcept { return sizeof...(Rest) + 1; }
+
+		/// @brief Check if the variant can be in an invalid state
+		/// @return True if all the types are fundamental
+		static constexpr bool can_be_invalid() noexcept
+		{
+			return variant_t::can_be_invalid();
+		}
+
+		/// @brief Returns the alignment of the type with the highest size
+		/// @return size_t representing the alignment
+		static constexpr size_t alignment() noexcept { return alignof(helpers::get_type_of_max_size_t<First, Rest...>); }
+
+		/// @brief Returns the underlying's variant buffer size
+		/// @return size in byte of the stack buffer of the variant
+		static constexpr size_t buffer_byte_size() noexcept { return helpers::get_max_size_of_type_pack_v<First, Rest...>; }
+
+		/// @brief Check the complexity of the algorithm used for destructing active object
+		/// This is the algorithm that decides if the destruction algorithm has a complexity of O(1) or O(n).
+		static constexpr algorithm destructor_complexity() noexcept
+		{
+			return variant_t::destructor_complexity();
+		}
+
+		/// @brief Check if the variant's destructor is noexcept (all the types' destructors are noexcept)
+		/// @return True if the variant's destructor is noexcept
+		static constexpr bool is_noexcept_destructible() noexcept
+		{
+			return variant_t::is_noexcept_destructible();
+		}
+
+		/// @brief Check if a variant is copyable
+		/// @return True if all the possible type that can be stored by the variant can be copy constructed
+		static constexpr bool is_copyable() noexcept
+		{
+			return variant_t::is_copyable();
+		}
+
+		/// @brief Check if a variant is noexcept copyable
+		/// @return True if all the possible type that can be stored by the variant can be noexcept copy constructed
+		static constexpr bool is_noexcept_copyable() noexcept
+		{
+			return variant_t::is_noexcept_copyable();
+		}
+
+		/// @brief Check if a variant is movable
+		/// @return True if all the possible type that can be stored by the variant can be move constructed
+		static constexpr bool is_movable() noexcept
+		{
+			return variant_t::is_movable();
+		}
+
+		/// @brief Check if a variant is movable
+		/// @return True if all the possible type that can be stored by the variant can be noexcept move constructed
+		static constexpr bool is_noexcept_movable() noexcept
+		{
+			return variant_t::is_noexcept_movable();
+		}
+
+		/******************************************
+		CONSTRUCTORS AND DESTRUCTOR
+		******************************************/
+
+		/// @brief Default constructor, which default construct the variant
+		variant_impl() noexcept(std::is_nothrow_default_constructible_v<First>) = default;
+
+		/// @brief Destroy the variant
+		~variant_impl() noexcept(is_noexcept_destructible()) = default;
+
+		/// @brief Copy constructor
+		/// @param to_copy The variant to copy
+		variant_impl(const variant_impl& to_copy) noexcept(is_noexcept_copyable()) = default;			
+
+		/// @brief Move constructor
+		/// @param to_move The variant to move
+		variant_impl(variant_impl&& to_move) noexcept(is_noexcept_movable()) = default;
+
+		template<typename T>
+		variant_impl(T&& obj)
+			: variant(std::forward<T>(obj))
+		{}
+
+		template<typename T>
+		/// @brief Copy assignment operator, which copies the active object of 'to_copy'
+		/// @param to_copy The variant to copy
+		/// @return *this
+		variant_impl& operator=(const variant_impl& to_copy) noexcept(is_noexcept_copyable())
+		{
+			std::scoped_lock lock(mutex, to_copy.mutex);
+			variant.destruct_active();
+			variant = to_copy;
+			
+			return *this;
+		}
+
+		template<typename T>
+		/// @brief Move assignment operator, which moves the active object from 'to_move'
+		/// @param to_move The variant to move
+		/// @return *this
+		variant_impl& operator=(variant_impl&& to_move) noexcept(is_noexcept_movable())
+		{
+			std::scoped_lock lock(mutex, to_move.mutex);
+			variant.destruct_active();
+			variant = std::move(to_move);
+			
+			return *this;
+		}
+
+		template<typename T>
+		/// @brief Destroy the active object, and construct (by forwarding) 'obj', making 'T' active
+		/// @tparam T The type of the object
+		/// @param obj The object to forward to the constructor 
+		/// @return *this
+		variant_impl& operator=(T&& obj)
+		{
+			std::scoped_lock lock(mutex);
+			variant.destruct_active();
+			variant = std::forward<T>(obj);
+
+			return *this;
+		}
+
+		/******************************************
+		METHODS AND HELPERS
+		******************************************/
+
+		template<typename T, typename... Args>
+		/// @brief Try to emplace an object, if its constructor throws returns false, and set the variant to invalid
+		/// @tparam T The type to construct		
+		/// @return True if constructing was successful
+		inline bool try_emplace(Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args> && is_noexcept_destructible())
+		{
+			std::scoped_lock lock(mutex);
+			if constexpr (std::is_nothrow_constructible_v<T, Args>)
+			{
+				variant.emplace<T>(std::forward<Args>(args)...);
+				return true;
+			}
+			else
+			{
+				try
+				{
+					variant.emplace<T>(std::forward<Args>(args)...);
+				}
+				catch { return false; }
+			}
+		}
+
+		template<typename FuncReturn, typename T, typename... Args>
+		/// @brief Try to emplace an object, if its constructor throws returns false, and set the variant to invalid
+		/// @tparam T The type to construct		
+		/// @return True if constructing was successful
+		inline auto emplace_and(FuncReturn(*func)(const T&), Args&&... args) const noexcept(std::is_nothrow_constructible_v<T, Args>&& is_noexcept_destructible())
+		{
+			std::scoped_lock lock(mutex);
+			variant.emplace<T>(std::forward<Args>(args)...);
+			return func(*reinterpret_cast<T*>(variant.buffer_pointer()));
+		}
+
+		template<typename FuncReturn, typename T, typename... Args>
+		/// @brief Try to emplace an object, if its constructor throws returns false, and set the variant to invalid
+		/// @tparam T The type to construct		
+		/// @return True if constructing was successful
+		inline auto emplace_and(FuncReturn(*func)(T&), Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args>&& is_noexcept_destructible())
+		{
+			std::scoped_lock lock(mutex);
+			variant.emplace<T>(std::forward<Args>(args)...);
+			return func(*reinterpret_cast<T*>(variant.buffer_pointer()));
+		}
+
+		template<typename T>
+		/// @brief Gets the value of the variant and passes it to a function
+		/// @tparam T The active type of the variant
+		/// @param func Function pointer which takes a const T&
+		/// @return true if the object was passed to 'func' (the type was active)
+		inline bool get_and(void(*func)(T&))
+		{
+			std::scoped_lock lock(mutex);
+			if (variant.holds_active_type<T>())
+			{
+				func(variant.get<T>());
+				return true;
+			}
+			return false;
+		}
+
+		template<typename T>
+		/// @brief Gets the value of the variant and passes it to a function
+		/// @tparam T The active type of the variant
+		/// @param func Function pointer which takes a const T&
+		/// @return true if the object was passed to 'func' (the type was active)
+		inline bool get_and(void(*func)(const T&)) const
+		{
+			std::scoped_lock lock(mutex);
+			if (variant.holds_active_type<T>())
+			{
+				func(variant.get<T>());
+				return true;
+			}
+			return false;
+		}
+
+		/// @brief Thread-safe print implementation
+		/// @param os The std::ostream in which to << the variant's content
+		inline void print(std::ostream& os) const
+		{
+			std::scoped_lock lock(mutex);
+			variant.print(os);
+		}
 	};
 
-	template<typename First, typename... Rest>
+	template<typename DestructionPolicy, typename ThreadSafety, typename First, typename... Rest>
 	/// @brief writes the content of the active object in the variant to 'os'
-	static std::ostream& operator<<(std::ostream& os, const variant_impl<First, Rest...>& var)
+	static std::ostream& operator<<(std::ostream& os, const variant_impl<DestructionPolicy, ThreadSafety, First, Rest...>& var)
 	{
 		var.print(os);
 		return os;
