@@ -349,6 +349,53 @@ namespace vale
 		template<typename First, typename... Rest>
 		using get_type_of_max_size_t =
 			typename get_type_of_max_size<First, Rest...>::type;
+
+		/******************************************
+		SFINAE FOR MOVE AND COPY CONSTRUCTOR
+		******************************************/
+		template <bool>
+		/// @brief Helper which allows to SFINAE a copy constructor
+		struct NoCopy;
+
+		template <>
+		/// @brief Prevents copy constructor of class which inherits from it
+		struct NoCopy<true>
+		{
+			NoCopy(const NoCopy&) = delete;
+			NoCopy& operator=(const NoCopy&) = delete;
+		protected:
+			~NoCopy() = default;
+		};
+
+		template <>
+		/// @brief Overload that does not do anything
+		struct NoCopy<false>
+		{
+		protected:
+			~NoCopy() = default; // prevent delete from pointer-to-parent
+		};
+
+		template <bool>
+		/// @brief Helper which allows to SFINAE a move constructor
+		struct NoMove;
+
+		template <>
+		/// @brief Prevents move constructor of class which inherits from it
+		struct NoMove<true>
+		{
+			NoMove(const NoMove&) = delete;
+			NoMove(NoMove&&) = delete;
+		protected:
+			~NoMove() = default; // prevent delete from pointer-to-parent
+		};
+
+		template <>
+		/// @brief Overload that does not do anything
+		struct NoMove<false>
+		{
+		protected:
+			~NoMove() = default; // prevent delete from pointer-to-parent
+		};
 	}
 
 	/// @brief Enum representing an algorithm complexity
