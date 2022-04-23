@@ -688,10 +688,11 @@ namespace vale
 		/// @brief Try to emplace an object, if its constructor throws returns false, and set the variant to invalid
 		/// @tparam T The type to construct		
 		/// @return True if constructing was successful
-		inline bool try_emplace(Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args> && is_noexcept_destructible())
+		inline bool try_emplace(Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...> && is_noexcept_destructible())
 		{
 			std::scoped_lock lock(mutex);
-			if constexpr (std::is_nothrow_constructible_v<T, Args>)
+			variant.destruct_active();
+			if constexpr (std::is_nothrow_constructible_v<T, Args...>)
 			{
 				variant.emplace<T>(std::forward<Args>(args)...);
 				return true;
@@ -710,9 +711,10 @@ namespace vale
 		/// @brief Try to emplace an object, if its constructor throws returns false, and set the variant to invalid
 		/// @tparam T The type to construct		
 		/// @return True if constructing was successful
-		inline auto emplace_and(FuncReturn(*func)(const T&), Args&&... args) const noexcept(std::is_nothrow_constructible_v<T, Args>&& is_noexcept_destructible())
+		inline auto emplace_and(FuncReturn(*func)(const T&), Args&&... args) const noexcept(std::is_nothrow_constructible_v<T, Args...> && is_noexcept_destructible())
 		{
 			std::scoped_lock lock(mutex);
+			variant.destruct_active();
 			variant.emplace<T>(std::forward<Args>(args)...);
 			return func(*reinterpret_cast<T*>(variant.buffer_pointer()));
 		}
@@ -721,9 +723,10 @@ namespace vale
 		/// @brief Try to emplace an object, if its constructor throws returns false, and set the variant to invalid
 		/// @tparam T The type to construct		
 		/// @return True if constructing was successful
-		inline auto emplace_and(FuncReturn(*func)(T&), Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args>&& is_noexcept_destructible())
+		inline auto emplace_and(FuncReturn(*func)(T&), Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...> && is_noexcept_destructible())
 		{
 			std::scoped_lock lock(mutex);
+			variant.destruct_active();
 			variant.emplace<T>(std::forward<Args>(args)...);
 			return func(*reinterpret_cast<T*>(variant.buffer_pointer()));
 		}
