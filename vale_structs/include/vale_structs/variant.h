@@ -203,16 +203,17 @@ namespace vale
 		/// @brief Creates a variant storing an object of type 'T'
 		/// @tparam T The type of the active object
 		/// @param object The value of the new object to store
-		variant_impl(const T& object) noexcept(std::is_nothrow_copy_constructible_v<T>)
+		variant_impl(T&& object)
 		{
 			//The type should be part of the parameter pack of the variant
 			static_assert(!helpers::is_type_not_in_pack_v<T, First, Rest...>,
 				"Type isn't part of the template parameter pack of the variant!");
-			construct<T>(object);
+			construct<T>(std::forward<T>(object));
 		}
 
-		variant_impl(std::enable_if_t<is_copyable(), const variant_impl&> to_copy) noexcept(is_noexcept_copyable())
+		variant_impl(const variant_impl& to_copy) noexcept(is_noexcept_copyable())
 		{
+			static_assert(is_copyable(), "The variant isn't copyable!");
 			type = to_copy.type;
 			if constexpr (can_be_invalid())
 			{
@@ -225,8 +226,9 @@ namespace vale
 			}
 		}
 
-		variant_impl(std::enable_if_t<is_movable(), variant_impl&&> to_move) noexcept(is_noexcept_movable())
+		variant_impl(variant_impl&& to_move) noexcept(is_noexcept_movable())
 		{
+			static_assert(is_movable(), "The variant isn't movable!");
 			type = to_move.type;
 			if constexpr (can_be_invalid())
 			{
@@ -239,8 +241,10 @@ namespace vale
 			}
 		}
 
-		variant_impl& operator=(std::enable_if_t<is_copyable(), const variant_impl&> to_copy) noexcept(is_noexcept_copyable())
+		variant_impl& operator=(const variant_impl& to_copy) noexcept(is_noexcept_copyable())
 		{
+			static_assert(is_copyable(), "The variant isn't copyable!");
+
 			destruct_active();
 			type = to_copy.type;
 			if constexpr (can_be_invalid())
@@ -254,8 +258,10 @@ namespace vale
 			}
 		}
 
-		variant_impl& operator=(std::enable_if_t<is_movable(), variant_impl&&> to_move) noexcept(is_noexcept_movable())
+		variant_impl& operator=(variant_impl&& to_move) noexcept(is_noexcept_movable())
 		{
+			static_assert(is_movable(), "The variant isn't movable!");
+
 			destruct_active();
 			type = to_move.type;
 			if constexpr (can_be_invalid())
@@ -280,12 +286,12 @@ namespace vale
 		/// @tparam T The type of the new object to store
 		/// @param object The new object to store
 		/// @return *this
-		variant_impl& operator=(const T& object)
+		variant_impl& operator=(T&& object)
 		{
 			static_assert(!helpers::is_type_not_in_pack_v<T, First, Rest...>,
 				"Type isn't part of the template parameter pack of the variant!");
 			destruct_active();
-			construct<T>(object); //constructs the new object
+			construct<T>(std::forward<T>(object)); //constructs the new object
 
 			return *this;
 		}
@@ -351,7 +357,7 @@ namespace vale
 		template<typename T, typename... Args>
 		/// @brief Constructs an object directly, after destroying the active one
 		/// @tparam T The type to construct
-		inline void emplace(Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
+		inline void emplace(Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...> && is_noexcept_destructible())
 		{
 			static_assert(!helpers::is_type_not_in_pack_v<T, First, Rest...>,
 				"Type isn't part of the template parameter pack of the variant!");
@@ -359,7 +365,26 @@ namespace vale
 			construct<T>(std::forward<Args>(args)...);
 		}
 
-	private:
+		template<typename T>
+		/// @brief Check if the variant holds an active 'T'
+		/// @tparam T The type to check for
+		/// @return true if 'T' is active
+		inline bool holds_active_type()
+		{
+			static_assert(!helpers::is_type_not_in_pack_v<T, First, Rest...>,
+				"Type isn't part of the template parameter pack of the variant!");
+			return type == helpers::get_index_of_type_from_pack_v<T, First, Rest...>;
+		}
+
+		/// @brief Returns a pointer to the beginning of the buffer where the objects are stored
+		/// @return Pointer to the beginning of the buffer
+		inline void* buffer_pointer() noexcept { return buffer; }
+
+		/// @brief Returns a pointer to the beginning of the buffer where the objects are stored
+		/// @return const pointer to the beginning of the buffer
+		inline const void* buffer_pointer() const noexcept { return buffer; }
+
+	protected:
 
 		template<typename T, typename... Args>
 		/// @brief Constructs an object of type 'T' in the buffer
@@ -493,6 +518,8 @@ namespace vale
 
 			dt[type](from, buffer);
 		}
+
+		friend variant_impl<DestructionPolicy, ThreadSafe, First, Rest...>;
 	};
 
 	template<typename DestructionPolicy, typename First, typename... Rest>
