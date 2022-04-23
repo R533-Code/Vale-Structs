@@ -694,14 +694,16 @@ namespace vale
 			variant.destruct_active();
 			if constexpr (std::is_nothrow_constructible_v<T, Args...>)
 			{
-				variant.emplace<T>(std::forward<Args>(args)...);
+				variant.
+					template emplace<T>(std::forward<Args>(args)...);
 				return true;
 			}
 			else
 			{
 				try
 				{
-					variant.emplace<T>(std::forward<Args>(args)...);
+					variant.
+						template emplace<T>(std::forward<Args>(args)...);
 				}
 				catch { return false; }
 			}
@@ -715,7 +717,8 @@ namespace vale
 		{
 			std::scoped_lock lock(mutex);
 			variant.destruct_active();
-			variant.emplace<T>(std::forward<Args>(args)...);
+			variant.
+				template emplace<T>(std::forward<Args>(args)...);
 			return func(*reinterpret_cast<T*>(variant.buffer_pointer()));
 		}
 
@@ -727,7 +730,8 @@ namespace vale
 		{
 			std::scoped_lock lock(mutex);
 			variant.destruct_active();
-			variant.emplace<T>(std::forward<Args>(args)...);
+			variant.
+				template emplace<T>(std::forward<Args>(args)...);
 			return func(*reinterpret_cast<T*>(variant.buffer_pointer()));
 		}
 
@@ -739,9 +743,11 @@ namespace vale
 		inline bool get_and(void(*func)(T&))
 		{
 			std::scoped_lock lock(mutex);
-			if (variant.holds_active_type<T>())
+			if (variant.
+				template holds_active_type<T>())
 			{
-				func(variant.get<T>());
+				func(variant.
+					template get<T>());
 				return true;
 			}
 			return false;
@@ -755,9 +761,11 @@ namespace vale
 		inline bool get_and(void(*func)(const T&)) const
 		{
 			std::scoped_lock lock(mutex);
-			if (variant.holds_active_type<T>())
+			if (variant.
+				template holds_active_type<T>())
 			{
-				func(variant.get<T>());
+				func(variant.
+					template get<T>());
 				return true;
 			}
 			return false;
