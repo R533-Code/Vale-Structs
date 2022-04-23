@@ -8,36 +8,15 @@
 #include <vale_structs/array.h>
 #include <vale_structs/variant.h>
 
+#include <string>
+
 using namespace vale;
+using namespace std::string_literals;
 
-#include <variant>
 #define PRINT(val) std::cout << #val << ": " << val << '\n'
-
-struct helper
-{
-	helper() { std::cout << "helper() called" << std::endl; throw std::exception{}; }
-	//helper(const helper&) { std::cout << "helper(const helper&) called\n"; }
-	helper(const helper&) = delete;
-	helper(helper&&) noexcept { std::cout << "helper(helper&&) called\n"; }
-	~helper() { std::cout << "~helper called!\n"; }
-};
-
-std::ostream& operator<<(std::ostream& os, const helper& var)
-{
-	os << "helper";
-	return os;
-}
 
 int main(int argc, char** argv)
 {
-	vale::ts_variant<int, float, helper> arr1(10.0f);
-	arr1 = 10;
-	std::cout << std::boolalpha;
-	PRINT(decltype(arr1)::alignment());
-	PRINT(decltype(arr1)::buffer_byte_size());
-	PRINT(decltype(arr1)::is_movable());
-	PRINT(decltype(arr1)::is_noexcept_movable());
-	PRINT(decltype(arr1)::is_copyable());
-	PRINT(decltype(arr1)::is_noexcept_copyable());
-	PRINT(arr1);
+	vale::array array_variants = { vale::variant<int, float, std::string>(10.0f), vale::variant<int, float, std::string>("Hello Vale"s) };
+	PRINT(array_variants);
 }
