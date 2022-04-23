@@ -207,7 +207,7 @@ namespace vale
 		{
 			//The type should be part of the parameter pack of the variant
 			static_assert(!helpers::is_type_not_in_pack_v<T, First, Rest...>,
-				"Type isn't part of the template parameter pack of the variant!");
+				"Type isn't part of the template parameter pack of the variant, or copy/move constructors are deleted!");
 			construct<T>(std::forward<T>(object));
 		}
 
@@ -289,7 +289,7 @@ namespace vale
 		variant_impl& operator=(T&& object)
 		{
 			static_assert(!helpers::is_type_not_in_pack_v<T, First, Rest...>,
-				"Type isn't part of the template parameter pack of the variant!");
+				"Type isn't part of the template parameter pack of the variant, or copy/move operators are deleted!");
 			destruct_active();
 			construct<T>(std::forward<T>(object)); //constructs the new object
 
