@@ -31,7 +31,7 @@ std::ostream& operator<<(std::ostream& os, const helper& var)
 int main(int argc, char** argv)
 {
 	vale::ts_variant<int, float, helper> arr1(10.0f);
-
+	arr1 = 10;
 	std::cout << std::boolalpha;
 	PRINT(decltype(arr1)::alignment());
 	PRINT(decltype(arr1)::buffer_byte_size());
@@ -40,6 +40,4 @@ int main(int argc, char** argv)
 	PRINT(decltype(arr1)::is_copyable());
 	PRINT(decltype(arr1)::is_noexcept_copyable());
 	PRINT(arr1);
-	//auto arr2 = arr1;
-	//PRINT(arr2);
 }
